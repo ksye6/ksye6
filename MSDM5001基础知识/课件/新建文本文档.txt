@@ -1,0 +1,2 @@
+mpiexec –n 8 python C:\Users\张铭韬\Desktop\test1.py
+mpiexec –n 8 python C:\Users\张铭韬\Desktop\学业\港科大\MSDM5001基础知识\作业\test1.py

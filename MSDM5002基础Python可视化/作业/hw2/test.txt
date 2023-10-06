@@ -1,0 +1,97 @@
+import random
+
+def step1(x, y):
+    # 获取当前位置可以选择的行走方向
+    directions = get_valid_directions(x, y)
+    
+    # 根据不同的行走方向，随机选择一个方向
+    direction = random.choice(directions)
+    
+    # 根据选择的方向更新坐标
+    if direction == 'up':
+        new_x = x
+        new_y = y + 1
+    elif direction == 'down':
+        new_x = x
+        new_y = y - 1
+    elif direction == 'left':
+        new_x = x - 1
+        new_y = y
+    elif direction == 'right':
+        new_x = x + 1
+        new_y = y
+    
+    return new_x, new_y
+
+# 获取当前位置可以选择的行走方向
+def get_valid_directions(x, y):
+    valid_directions = []
+    
+    if is_crossroad(x, y):
+        valid_directions = ['up', 'down', 'left', 'right']
+    elif is_t_junction(x, y):
+        valid_directions = ['up', 'down', 'left', 'right']
+    elif is_horizontal_corridor(x, y):
+        valid_directions = ['left', 'right']
+    elif is_vertical_corridor(x, y):
+        valid_directions = ['up', 'down']
+    
+    return valid_directions
+
+# 判断当前位置是否为十字路口
+def is_crossroad(x, y):
+    return True if (x % 3 == 1) and (y % 3 == 1) else False
+
+# 判断当前位置是否为T字路口
+def is_t_junction(x, y):
+    return True if (x % 3 != 1) and (y % 3 != 1) else False
+
+# 判断当前位置是否为横向走廊的中间位置
+def is_horizontal_corridor(x, y):
+    return True if (x % 3 != 1) and (y % 3 == 1) else False
+
+# 判断当前位置是否为纵向走廊的中间位置
+def is_vertical_corridor(x, y):
+    return True if (x % 3 == 1) and (y % 3 != 1) else False
+
+
+x = 8  # 假设人当前坐标为(8, 8)
+y = 8
+new_x, new_y = step1(x, y)  # 获取1步后新的坐标
+print(new_x, new_y)  # 打印新的坐标
+
+def simulate_supermarket():
+    steps_a = 0  # A的步数
+    steps_b = 0  # B的步数
+
+    while True:
+        # A行走
+        x_a, y_a = step1(x_a, y_a)
+        steps_a += 1
+        
+        # 检查A是否到达B的坐标
+        if x_a == x_b and y_a == y_b:
+            return steps_a + steps_b
+        
+        # B行走
+        x_b, y_b = step1(x_b, y_b)
+        steps_b += 1
+        
+        # 检查B是否到达A的坐标
+        if x_b == x_a and y_b == y_a:
+            return steps_a + steps_b
+
+total_steps = 0
+num_simulations = 1000
+
+for _ in range(num_simulations):
+    # 设置初始坐标（根据题目要求，A初始坐标为(0, 0)，B初始坐标为(15, 15)）
+    x_a, y_a = 0, 0
+    x_b, y_b = 15, 15
+
+    total_steps += simulate_supermarket()
+
+average_steps = total_steps / num_simulations
+print("Average number of steps:", average_steps)
+
+
