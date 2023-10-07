@@ -1,4 +1,12 @@
-#1
+---
+title: "HW2"
+author: "20989977 Zhang Mingtao"
+date: "2023/10/7"
+output: html_document
+---  
+1.
+```{r}
+#(a)
 set.seed(1)
 n=500000
 Random_Walk=cumsum(sample(c(-1, 1), n, TRUE))
@@ -14,8 +22,7 @@ for (i in 1:n) {
 plot(seq(n)[(0.8*n):n],MSD_t[(0.8*n):n],ylim=c(-8,8))
 #The coefficient can be regarded as a constant D within the fluctuation range.
 
-#2
-
+#(b)
 set.seed(1)
 n=1000
 h=0.02
@@ -31,4 +38,4 @@ plot(density(x))
 #The numerical PDF is close to a normal distribution.
 var(x)
 
-
+```  
