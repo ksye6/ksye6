@@ -224,7 +224,7 @@ x=rho*np.cos(theta)
 y=rho*np.sin(theta)
 
 ax1.plot(x, y,color='blue',linewidth=4)
-plt.axis('equal')
+plt.axis('square')
 plt.title('fat heart',fontsize=20)
 
 
