@@ -1,0 +1,505 @@
+---
+title: "HW2"
+author: "20989977 Zhang Mingtao"
+date: "2023/10/12"
+output: html_document
+---  
+1.
+```{r}
+#(1)
+library(boot)
+#1
+car_df=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5054机器学习//作业//hw2//cars.csv")
+cv.error=rep(0,10)
+for (i in 1:10){
+  set.seed(1)
+  glm.fit=glm(dist~poly(speed,i),data=car_df)
+  cv.error[i]=cv.glm(car_df,glm.fit)$delta[1]
+}
+cv.error
+plot(1:10,cv.error,type='b',xlab="Degree of Polynomial",ylab="CV Error",main="LOOCV")
+#We can choose the i=2 to minimize error and model complexity.
+
+#2
+cv.error.5=rep(0,10)
+for (i in 1:10){
+  set.seed(1)
+  glm.fit2=glm(dist~poly(speed,i),data=car_df)
+  cv.error.5[i]=cv.glm(car_df,glm.fit2,K=5)$delta[1]     ## K=10 means 10-fold cross validation
+}
+cv.error.5
+plot(1:length(cv.error.5),cv.error.5,type='b',col='blue',xlab='Degree of Polynomial',ylab='CV Error',main='5-fold CV')
+#We can choose the i=2 to minimize error and model complexity.
+
+#3
+library(class)
+library(kknn)
+
+# trainx=car_df[,1]
+# trainy=car_df[,2]
+
+#留一法交叉验证选择最佳带宽
+# loo_result=train.kknn(dist~.,car_df,kernel="gaussian",scale=T,kmax=10,tune=TRUE,kcv=nrow(car_df))
+error_LOO=rep(0,10)
+set.seed(1)
+for (i in 1:10){
+  tentmodel=train.kknn(dist~.,car_df,kernel = "gaussian",distance=i,scale=T,kmax=10)
+  tenterror=cv.kknn(tentmodel,car_df,kcv=nrow(car_df))[[2]][2]
+  # tenterror=cv.kknn(dist~.,car_df,kernel = "gaussian",distance=i,scale=T,,kcv=nrow(car_df))[[2]][2]
+  error_LOO[i]=tenterror
+}
+error_LOO
+plot(1:length(error_LOO),error_LOO,type='b',col='blue',xlab='KNN-Gaussian kernel of h for best k',ylab='CV Error',main='LOOCV',ylim=c(200,300))
+
+#h=2
+
+
+# 使用5折交叉验证选择最佳带宽
+# kf_result=train.kknn(dist~.,car_df,kernel="gaussian",scale=T,kmax=10,tune=TRUE,kcv=5)
+error_K5=rep(0,5)
+set.seed(1)
+for (i in 1:10){
+  tentmodel=train.kknn(dist~.,car_df,kernel = "gaussian",distance=i,scale=T,kmax=10)
+  tenterror=cv.kknn(tentmodel,car_df,kcv=5)[[2]][2]
+  # tenterror=cv.kknn(dist~.,car_df,kernel = "gaussian",distance=i,scale=T,,kcv=nrow(car_df))[[2]][2]
+  error_K5[i]=tenterror
+}
+error_K5
+plot(1:length(error_K5),error_LOO,type='b',col='blue',xlab='KNN-Gaussian kernel of h for best k',ylab='CV Error',main='5-fold CV',ylim=c(200,300))
+
+#h=2
+
+#4
+# Taking the minimun error(MSE) and the simpler model into consideration:
+# polynomial regression: i=2
+min(cv.error)
+min(cv.error.5)
+
+# KNN-Gaussian kernel: h=2 kbest
+min(error_LOO)
+min(error_K5)
+
+# And the 5-fold CV is faster and preciser than LOOCV.
+
+
+```  
+
+2.
+```{r}
+#(2)
+titanic_df=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5054机器学习//作业//hw2//titanic.csv")
+titanic_df=na.omit(titanic_df)
+
+#因子型处理+舍弃共线性变量(female/Pclass=2)
+titanic_df$Sex[which(titanic_df$Sex== "female")]=1
+titanic_df$Sex[which(titanic_df$Sex== "male")]=0
+titanic_df$Sex=as.factor(titanic_df$Sex)
+
+titanic_df$Pclass[which(titanic_df$Pclass==1)]=11
+titanic_df$Pclass[which(titanic_df$Pclass==2)]=22
+titanic_df$Pclass=as.factor(titanic_df$Pclass)
+
+#建模
+glmod1=glm(Survived~Pclass+Sex+Age+SibSp+Fare,data=titanic_df,family=binomial)
+summary(glmod1)
+coef(glmod1)
+confint(glmod1,level=0.95)
+
+# coefficients for Sex/male: -2.616107108
+# coefficients for pclass/3rd: -1.217522120
+# 95% confidence intervals for Sex/male: [-3.04894031,-2.203287151]
+# 95% confidence intervals for pclass/3rd: [-1.70597478,-0.737844276]
+
+
+#或者将因子型变量视为数值型变量不做处理建模：
+titanic_df2=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5054机器学习//作业//hw2//titanic.csv")
+titanic_df2=na.omit(titanic_df2)
+titanic_df2$Sex[which(titanic_df2$Sex== "female")]=1
+titanic_df2$Sex[which(titanic_df2$Sex== "male")]=0
+titanic_df2$Sex=as.integer(titanic_df2$Sex)
+
+glmod2=glm(Survived~Pclass+Sex+Age+SibSp+Fare,data=titanic_df2,family=binomial)
+summary(glmod2)
+coef(glmod2)
+confint(glmod2,level=0.95)
+# coefficients for Sex: 2.613101036
+# coefficients for pclass: -1.254155279
+# 95% confidence intervals for Sex: [2.201391972,3.045015754]
+# 95% confidence intervals for Pclass: [-1.575659790,-0.941778047]
+
+#此时pclass差别相对大些，因为第一个模型舍弃了Pclass=2的因子变量
+#为统一起见后续几问均采用titanic_df2数据，全部视作数值型变量处理
+
+#2
+n=nrow(titanic_df2)
+
+coef_fun=function(df,index){
+  df=df[index,]
+  fit=glm(Survived~Pclass+Sex+Age+SibSp+Fare,data=df,family=binomial)
+  return(coef(fit,level=0.95))
+}
+
+# coef_fun(titanic_df2,sample(n,n,replace=T))
+
+set.seed(1) # 设置随机数种子
+boot.res=boot(titanic_df2,coef_fun,R=1000)
+
+hist(boot.res$t[,2],xlab="Value",main="Bootstrap Estimate of Coefficient Pclass")
+hist(boot.res$t[,3],xlab="Value",main="Bootstrap Estimate of Coefficient Sex")
+
+
+quantile(boot.res$t[,3], probs = c(0.025, 0.975), na.rm = TRUE)
+# 95% confidence intervals for Sex: [2.247117,3.104147]
+quantile(boot.res$t[,2], probs = c(0.025, 0.975), na.rm = TRUE)
+# 95% confidence intervals for Pclass: [-1.6088958,-0.9433257]
+
+# The results of the 95% confidence intervals are about the same as that in #1. 
+
+#3
+# Take Parch into consideration:
+glmod3=glm(Survived~Pclass+Sex+Age+SibSp+Fare+Parch,data=titanic_df2,family=binomial)
+summary(glmod3)
+coef(glmod3)
+confint(glmod3,level=0.95)
+# It seems that Parch is not a significant variable.
+
+#4
+train=titanic_df2[-1,c(2,3,5,6,7,10)]
+test=titanic_df2[1,c(2,3,5,6,7,10)]
+
+glmod4=glm(Survived~., data=train,family=binomial)
+summary(glmod4)
+
+pred1=predict(glmod4,test,interval="prediction",type="response")
+pred1 #判断能活(=1)的概率为0.08886329
+as.numeric(ifelse(pred1>0.5,1,0)) #(Survived=0)
+
+#####  Bootstrap  #####
+n=nrow(train)
+
+prop_fun=function(df,index){
+  df=df[index,]
+  fit=glm(Survived~., data=df,family=binomial)
+  pred1=predict(fit,test,interval="prediction",type="response")
+  return(pred1)
+}
+
+set.seed(1) # 设置随机数种子
+boot.res2=boot(train,prop_fun,R=1000)
+
+hist(boot.res2$t,xlab="Value",main="Bootstrap Estimate of Survive Probability")
+
+quantile(boot.res2$t, probs = c(0.025, 0.975), na.rm = TRUE)
+# 95% confidence intervals for Survive Probability: [0.05940475,0.12233676]
+
+#5
+library(MASS)
+qda.fit=qda(Survived~.,data=train)
+qda.fit  #Prior probabilities of groups先验概率
+qda.pred=predict(qda.fit,test)
+qda.pred$class  #预测的所属类的结果;后验概率为qda.pred$posterior
+
+qda.pred$posterior[2] #判断能活(=1)的概率为0.04359962
+
+#####  Bootstrap  #####
+n=nrow(train)
+
+qda_prop_fun=function(df,index){
+  df=df[index,]
+  fit=qda(Survived~.,data=df)
+  qda.pred=predict(fit,test,interval="prediction",type="response")
+  return(qda.pred$posterior[2])
+}
+
+set.seed(1) # 设置随机数种子
+boot.res3=boot(train,qda_prop_fun,R=1000)
+
+hist(boot.res3$t,xlab="Value",main="Bootstrap Estimate of Survive Probability - QDA")
+
+quantile(boot.res3$t, probs = c(0.025, 0.975), na.rm = TRUE)
+# 95% confidence intervals for Survive Probability (QDA): [0.02116826,0.07719099 ]
+
+# The probability of QDA model is likely smaller than that of logistic regression model.
+
+
+```  
+
+3.
+```{r}
+#(3)
+library(leaps)
+#1
+GPAdf=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5054机器学习//作业//hw2//FirstYearGPA.csv")
+
+regfit.full1=regsubsets(GPA~.,data=GPAdf,method="exhaustive",nbest=1,nvmax=8)
+full.sum1=summary(regfit.full1)
+plot(as.numeric(row.names(full.sum1$which)),full.sum1$rsq,pch=19,col="black",type="b",xlab="Number of Predictors",ylab="Rsquared",main="Best Subsets Selection")
+
+full.sum1$adjr2
+plot(as.numeric(row.names(full.sum1$which)),full.sum1$adjr2,pch=19,col="black",type="b",xlab="Number of Predictors",ylab="Adjr2",main="Best Subsets Selection")
+
+# 4 number of predictors is the best model using adjusted R-square, considering the model complexity.
+
+#2
+library(boot)
+CV5.err=rep(0,8)
+set.seed(1)
+for(p in 1:8){
+  x=which(summary(regfit.full1)$which[p,])
+  x=as.numeric(x)
+  x=x[-1]-1
+  dfname=c("GPA",names(GPAdf)[x])
+  newGPAdf=GPAdf[,dfname]
+  glm.fit=glm(GPA~.,data=newGPAdf)
+  cv.err=cv.glm(newGPAdf,glm.fit,K=5)
+  CV5.err[p]=cv.err$delta[1] #残差平方和
+}
+CV5.err
+plot(1:8,CV5.err,type="b",lwd=2,col=2,xlab="Number of Variables",ylab="CV Error",main="5-fold CV")
+
+# We can also choose 4 number of predictors to be the best model using 5-fold CV, considering the model complexity.
+
+#3
+########## Forward Subset Selection
+regfit.fwd=regsubsets(GPA~.,data=GPAdf,method="forward",nvmax=8)
+fwd.sum=summary(regfit.fwd)
+
+fwd.sum$adjr2
+plot(as.numeric(row.names(fwd.sum$which)),fwd.sum$adjr2,pch=19,col="black",type="b",xlab="Number of Predictors",ylab="Adjr2",main="Best Subsets Selection - Forward")
+# The result is the same as the exhaustive method.
+
+fwd.sum$bic
+plot(as.numeric(row.names(fwd.sum$which)),fwd.sum$bic,pch=19,col="black",type="b",xlab="Number of Predictors",ylab="Bic",main="Best Subsets Selection - Forward")
+# 3 number of predictors is the best model using BIC, considering the model complexity.
+
+#4
+CV5.err2=rep(0,8)
+set.seed(1)
+for(p in 1:8){
+  x=which(summary(regfit.fwd)$which[p,])
+  x=as.numeric(x)
+  x=x[-1]-1
+  dfname=c("GPA",names(GPAdf)[x])
+  newGPAdf=GPAdf[,dfname]
+  glm.fit=glm(GPA~.,data=newGPAdf)
+  cv.err=cv.glm(newGPAdf,glm.fit,K=5)
+  CV5.err2[p]=cv.err$delta[1] #残差平方和
+}
+CV5.err2
+plot(1:8,CV5.err2,type="b",lwd=2,col=2,xlab="Number of Variables",ylab="CV Error",main="5-fold CV")
+# The forward model is the same as the exhaustive model.
+# We can choose 4 number of predictors to be the best model using 5-fold CV, considering the model complexity.
+
+# 由于参数设置相同，且变量相互之间可能没有高度相关性，Forward和exhaustive的最优模型相同；
+# 根据adjr2和bic分别可选4或3个变量进行建模；
+# 而交叉验证的CV由于尺度过小，以及受种子随机性影响较大，在允许范围内可不纳入考量范围优先级中，放大尺度如下所示：
+plot(1:8,CV5.err2,type="b",lwd=2,col=2,xlab="Number of Variables",ylab="CV Error",main="5-fold CV",ylim=c(0,1e-29))
+
+#5
+GPAdf2=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5054机器学习//作业//hw2//FirstYearGPA.csv")
+GPAdf2$GPA=ifelse(GPAdf2$GPA>=3,1,0)
+
+library(MASS)
+library(caret)
+
+GPAdf2$GPA=as.factor(GPAdf2$GPA) # 分类问题
+set.seed(1)
+
+############ 循环实现forward子集选择，交叉验证由train函数实现 ############
+
+selected_vars=c()
+best_performance=0
+
+for (feature in colnames(GPAdf2)[-1]){
+  # 添加
+  selected_vars=c(selected_vars,feature)
+  
+  # 训练LDA模型
+  lda_model=lda(GPA~.,data=GPAdf2[,c("GPA",selected_vars)])
+  
+  # 使用交叉验证评估模型性能
+  cv_results=train(GPA~.,data=GPAdf2[,c("GPA",selected_vars)],method="glm",trControl=trainControl(method ="cv",number=5))
+  
+  # 如果模型性能得分更好，则更新最佳模型和变量子集
+  if(cv_results$results$Accuracy>best_performance){
+    best_performance=cv_results$results$Accuracy
+    best_lda_model=lda_model
+    best_selected_vars=selected_vars
+  }else{
+    # 如果模型性能没有提升，则从变量子集中移除最后添加的特征
+    selected_vars=selected_vars[-length(selected_vars)]
+  }
+}
+
+best_selected_vars # "HSGPA"、"SATV"、"SATM"、"HU"
+best_performance   # 0.7040334
+
+# 选取"HSGPA"、"SATV"、"SATM"、"HU"这四个变量构建GLM模型最优
+
+#6
+library(MASS)
+library(caret)
+
+set.seed(1)
+
+############ 循环实现forward子集选择，交叉验证由train函数实现 ############
+
+selected_vars=c()
+best_performance=0
+
+for (feature in colnames(GPAdf2)[-1]){
+  # 添加
+  selected_vars=c(selected_vars,feature)
+  
+  # 训练LDA模型
+  lda_model=lda(GPA~.,data=GPAdf2[,c("GPA",selected_vars)])
+  
+  # 使用交叉验证评估模型性能
+  cv_results=train(GPA~.,data=GPAdf2[,c("GPA",selected_vars)],method="lda",trControl=trainControl(method ="cv",number=5))
+  
+  # 如果模型性能得分更好，则更新最佳模型和变量子集
+  if(cv_results$results$Accuracy>best_performance){
+    best_performance=cv_results$results$Accuracy
+    best_lda_model=lda_model
+    best_selected_vars=selected_vars
+  }else{
+    # 如果模型性能没有提升，则从变量子集中移除最后添加的特征
+    selected_vars=selected_vars[-length(selected_vars)]
+  }
+}
+
+best_selected_vars # "HSGPA"、"SATV"、"SATM"、"HU"
+best_performance   # 0.7039323
+
+# 选取"HSGPA"、"SATV"、"SATM"、"HU"这四个变量构建LDA模型最优
+
+```  
+
+4.
+```{r}
+#(4)
+train=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5054机器学习//作业//hw2//diabetes_train.csv")
+test=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5054机器学习//作业//hw2//diabetes_test.csv")
+trainx=train[,-1]
+trainy=train[,1]
+testx=test[,-1]
+testy=test[,1]
+
+#1
+library(glmnet)
+grid=10^seq(4,-2,length=100)
+lasso.mod=glmnet(trainx,trainy,alpha=1,lambda=grid)
+names(lasso.mod)
+# coef(lasso.mod)
+plot(lasso.mod)
+
+coefficients=coef(lasso.mod)
+l1_norm=apply(abs(coefficients),2,sum)
+l1_norm
+# sqrt(sum(coef(ridge.mod)[-1,]^2)) ## l2 norm of the coefficients
+plot(l1_norm,xlab="index",ylab="l1 norm of coeff",type='b',col=2,main="LASSO Regression")   ## plot l1 norm
+
+#LASSO模型对于某些特征会将其系数收缩至0，从而实现特征选择的效果
+#对于某些自变量,当l1范数较大时,系数仍然保持较大;而对于另一些自变量,当l1范数较小时,系数趋向于0
+
+#2
+set.seed(1)
+#数据框需转化为矩阵
+cv.out=cv.glmnet(as.matrix(trainx),trainy,alpha=1,nfolds=10) ## CV errors by fitting LASSO on train dataset
+plot(cv.out)   ## plot mean squared error w.r.t. values of lambda
+
+bestlam=cv.out$lambda.min
+bestlam  # 2.14688
+
+out=glmnet(trainx,trainy,alpha=1,lambda=grid)
+lasso.coef=predict(out,type="coefficients",s=bestlam)[1:11,]   # use full trainning dataset
+
+lasso.coef
+lasso.coef[lasso.coef!=0]
+# 6 variables are included in the model.
+# They are sex、bmi、map、hdl、ltg、glu.
+
+#3
+lasso.pred=predict(lasso.mod,s=bestlam,newx=as.matrix(testx))   ## 基于最优λ值预测
+mean((lasso.pred-testy)^2)
+
+#4
+###### Bootstrap抽样 ######
+# coefficients=coef(lasso.mod,s=bestlam)
+
+# 定义函数
+n=nrow(trainx)
+bootstrap=function(df=train,index){
+  df=df[index,]
+  x=df[,-1]
+  y=df[,1]
+  fit=glmnet(x,y,alpha=1,lambda=grid)
+  coefficients=coef(fit,s=bestlam)[1:11,]
+  return(coefficients)
+}
+
+boot.res=boot(train,bootstrap,R=1000)
+boot.res
+
+# boot.res$t[,3]:sex
+hist(boot.res$t[,3],xlab="Value",main="Bootstrap Estimate of Coefficient Sex")
+quantile(boot.res$t[,3], probs = c(0.025, 0.975), na.rm = TRUE)
+
+# boot.res$t[,4]:bmi
+hist(boot.res$t[,4],xlab="Value",main="Bootstrap Estimate of Coefficient Bmi")
+quantile(boot.res$t[,4], probs = c(0.025, 0.975), na.rm = TRUE)
+
+# boot.res$t[,5]:map
+hist(boot.res$t[,5],xlab="Value",main="Bootstrap Estimate of Coefficient Map")
+quantile(boot.res$t[,5], probs = c(0.025, 0.975), na.rm = TRUE)
+
+# boot.res$t[,8]:hdl
+hist(boot.res$t[,8],xlab="Value",main="Bootstrap Estimate of Coefficient Hdl")
+quantile(boot.res$t[,8], probs = c(0.025, 0.975), na.rm = TRUE)
+
+# boot.res$t[,10]:ltg
+hist(boot.res$t[,10],xlab="Value",main="Bootstrap Estimate of Coefficient Ltg")
+quantile(boot.res$t[,10], probs = c(0.025, 0.975), na.rm = TRUE)
+
+# boot.res$t[,11]:glu
+hist(boot.res$t[,11],xlab="Value",main="Bootstrap Estimate of Coefficient Glu")
+quantile(boot.res$t[,11], probs = c(0.025, 0.975), na.rm = TRUE)
+
+#5
+train=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5054机器学习//作业//hw2//diabetes_train.csv")
+test=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5054机器学习//作业//hw2//diabetes_test.csv")
+trainx=train[,-1]
+trainy=train[,1]
+testx=test[,-1]
+testy=test[,1]
+
+trainy=ifelse(trainy>150,0,1)
+testy=ifelse(testy>150,0,1)
+
+trainy=as.factor(trainy)
+testy=as.factor(testy)
+
+set.seed(1)
+
+lasso.mod2=glmnet(trainx,trainy,alpha=1,lambda=grid,family="binomial")
+
+cv.out2=cv.glmnet(as.matrix(trainx),trainy,alpha=1,nfolds=10,family="binomial") ## CV errors by fitting LASSO on train dataset
+plot(cv.out2)   ## plot mean squared error w.r.t. values of lambda
+
+bestlam2=cv.out2$lambda.min
+bestlam2  # 0.02429548
+
+probs=predict(lasso.mod2,s=bestlam2,newx=as.matrix(testx),type="response")
+
+# predictions=ifelse(probs>0.5, "1", "0")
+# table(predictions,testy)
+
+lasso.coef=predict(lasso.mod2,type="coefficients",s=bestlam2)[1:11,]
+
+lasso.coef
+lasso.coef[lasso.coef!=0]
+# 6 variables are included in the model.
+# They are sex、bmi、map、hdl、ltg、glu, the same as that in the above model.
+
+
+```  
