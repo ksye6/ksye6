@@ -50,7 +50,7 @@
 # Choose configurations first then weight them evenly:
 
 a=sqrt(1/2/pi)
-T1=50000
+T1=100000
 states=rep(0,T1)
 t=1
 sigma=1
@@ -68,6 +68,7 @@ while(t<T1-1){
   }
 }
 
+set.seed(1)
 
 par(mfrow=c(2,2))
 
