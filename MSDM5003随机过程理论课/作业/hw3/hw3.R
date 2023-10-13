@@ -1,6 +1,6 @@
-s_0=curve(sin(2*pi*x),from = -3, to = 3)
-p=curve(sin(20*pi*x),from = -3, to = 3)
-s=curve(sin(2*pi*x)+sin(20*pi*x),from = -3, to = 3)
+# s_0=curve(sin(2*pi*x),from = -3, to = 3)
+# p=curve(sin(20*pi*x),from = -3, to = 3)
+# s=curve(sin(2*pi*x)+sin(20*pi*x),from = -3, to = 3)
 
 
 #(1):0<=x<=6;-3<=y<=3-x
