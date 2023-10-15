@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
   print(f"Pool took {time.time()-t1}")
 
-  t2 = time.time()
+  t1 = time.time()
   result=[]
   for x in range(10000):
     result.append(f(x))
