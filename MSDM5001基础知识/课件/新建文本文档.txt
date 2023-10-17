@@ -1,1 +1,2 @@
 mpiexec –n 2 python C:\Users\张铭韬\Desktop\学业\港科大\MSDM5001基础知识\课件\Parallel_Computing_Codes\VectorAdd0.py
+mpiexec –n 1 python C:\Users\张铭韬\Desktop\midterm1.py

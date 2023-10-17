@@ -1,7 +1,7 @@
 
 import csv
 # 
-# # 鎵撳紑CSV鏂囦欢
+# # 
 # with open('C:/Users/mzhangdb/Desktop/data/TDCS_M06A_20190830_080000.csv', newline='') as csvfile:
 #   reader = csv.reader(csvfile)
 #   VT = []
@@ -52,11 +52,11 @@ def check_performance(func, data, size_samples = [10, 20, 50, 100, 200, 500, 100
     plt.show()
 
 
-traffic_data = pd.read_csv("C:\\Users\\mzhangdb\\Desktop\\data\\TDCS_M06A_20190830_080000.csv",header=None)
+traffic_data = pd.read_csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5051面向对象python数据结构\\作业\\hw1\\data\\TDCS_M06A_20190830_080000.csv",header=None)
 traffic_data = traffic_data.iloc[:10000,]
 
-# traffic_data.iloc[1,1]  #浣嶇疆閫夊彇
-# traffic_data.loc[1,1]   #鏍囩绱㈠紩
+# traffic_data.iloc[1,1]  #索引
+# traffic_data.loc[1,1]   #标签
 
 VT = traffic_data.iloc[:,0]
 DT = traffic_data.iloc[:,1]
@@ -65,10 +65,13 @@ GID = traffic_data.iloc[:,2]
 distances = [row[5] for row in traffic_data.values.tolist()][:10000]
 
 import sys
-module_path = 'C:\\Users\\mzhangdb\\Desktop'
+module_path = 'C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5051面向对象python数据结构\\作业\\hw1'
 sys.path.append(module_path)
 
 from sorting import * 
+from tree_graph import * 
+from bintrees import * 
+from sortedcontainers import *
 
 # check_sort_result(bubble_sort,VT.tolist())
 # check_performance(bubble_sort,VT.tolist())
@@ -80,13 +83,31 @@ from sorting import *
 # check_sort_result(quicksort,VT.tolist())
 # check_performance(quicksort,VT.tolist())
 
-check_sort_result(mergesort,DT.tolist())
+check_sort_result(mergesort,VT.tolist())
 check_performance(mergesort,VT.tolist())
 
 # check_sort_result(heapsort,VT.tolist())
 # check_performance(heapsort,VT.tolist())
 
-from sortedcontainers import SortedDict
+def AVL_sort(data):
+    tree = AVLTree()
+    
+    for val in data:
+        if val in tree:
+            tree[val] += 1  # 增加计数器
+        else:
+            tree.insert(val, 1)
+    
+    sorted_data = []
+    for val, count in tree.iter_items():  # 使用iter_items()迭代器按顺序获取节点值和计数器
+        sorted_data.extend([val] * count)  # 根据计数器数量添加值到结果列表
+    
+    return sorted_data
+
+
+check_sort_result(AVL_sort,VT.tolist())
+check_performance(AVL_sort,VT.tolist())
+
 
 def BST_sort(data):
   bst = SortedDict()
@@ -103,7 +124,7 @@ def BST_sort(data):
   
   return sorted_data
 
-check_sort_result(BST_sort,DT.tolist())
-check_performance(BST_sort,DT.tolist())
+check_sort_result(BST_sort,VT.tolist())
+check_performance(BST_sort,VT.tolist())
 
 
