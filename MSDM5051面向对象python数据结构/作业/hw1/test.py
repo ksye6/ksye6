@@ -48,12 +48,13 @@ def check_performance(func, data, size_samples = [10, 20, 50, 100, 200, 500, 100
         timing_array.append((time.time() - start) / n_repeated)
     ref_linear = [i * timing_array[0] / size_samples[0] for i in size_samples]
     ref_quadratic = [i**2 * timing_array[0] / size_samples[0]**2 for i in size_samples]
+    plt.figure(figsize=(8,6),dpi=300)
     plt.loglog(size_samples, ref_linear, size_samples, ref_quadratic, size_samples, timing_array)
     plt.show()
 
 
 traffic_data = pd.read_csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5051面向对象python数据结构\\作业\\hw1\\data\\TDCS_M06A_20190830_080000.csv",header=None)
-traffic_data = traffic_data.iloc[:10000,]
+traffic_data = traffic_data.iloc[:20000,]
 
 # traffic_data.iloc[1,1]  #索引
 # traffic_data.loc[1,1]   #标签
@@ -73,22 +74,6 @@ from tree_graph import *
 from bintrees import * 
 from sortedcontainers import *
 
-# check_sort_result(bubble_sort,VT.tolist())
-# check_performance(bubble_sort,VT.tolist())
-
-# check_sort_result(insertion_sort,VT.tolist())
-# check_performance(insertion_sort,VT.tolist())
-
-# sys.setrecursionlimit(50000)
-# check_sort_result(quicksort,VT.tolist())
-# check_performance(quicksort,VT.tolist())
-
-check_sort_result(mergesort,VT.tolist())
-check_performance(mergesort,VT.tolist())
-
-# check_sort_result(heapsort,VT.tolist())
-# check_performance(heapsort,VT.tolist())
-
 def AVL_sort(data):
     tree = AVLTree()
     
@@ -103,10 +88,6 @@ def AVL_sort(data):
         sorted_data.extend([val] * count)  # 根据计数器数量添加值到结果列表
     
     return sorted_data
-
-
-check_sort_result(AVL_sort,VT.tolist())
-check_performance(AVL_sort,VT.tolist())
 
 
 def BST_sort(data):
@@ -124,7 +105,38 @@ def BST_sort(data):
   
   return sorted_data
 
-check_sort_result(BST_sort,VT.tolist())
+
+check_sort_result(bubble_sort,VT.tolist())
+check_sort_result(insertion_sort,VT.tolist())
+sys.setrecursionlimit(50000)
+check_sort_result(quicksort,VT.tolist())
+check_sort_result(heapsort,VT.tolist())
+check_sort_result(mergesort,VT.tolist())
+check_sort_result(AVL_sort,VT.tolist())
+# check_sort_result(BST_sort,VT.tolist())
+
 check_performance(BST_sort,VT.tolist())
 
 
+check_sort_result(bubble_sort,DT.tolist())
+check_sort_result(insertion_sort,DT.tolist())
+sys.setrecursionlimit(50000)
+check_sort_result(quicksort,DT.tolist())
+# check_sort_result(heapsort,DT.tolist())
+check_sort_result(mergesort,DT.tolist())
+check_sort_result(AVL_sort,DT.tolist())
+# check_sort_result(BST_sort,DT.tolist())
+
+check_performance(quicksort,DT.tolist())
+
+
+check_sort_result(bubble_sort,GID.tolist())
+check_sort_result(insertion_sort,GID.tolist())
+sys.setrecursionlimit(50000)
+check_sort_result(quicksort,GID.tolist())
+# check_sort_result(heapsort,GID.tolist())
+check_sort_result(mergesort,GID.tolist())
+check_sort_result(AVL_sort,GID.tolist())
+# check_sort_result(BST_sort,GID.tolist())
+
+check_performance(mergesort,GID.tolist())
