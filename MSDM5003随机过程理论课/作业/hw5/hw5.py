@@ -156,17 +156,13 @@ cumulative_variance
 # 并选取N=3即前三个主成分用于后续的建模
 
 #8
-# 计算第二、三主成分得分
-scores2 = np.dot(pricedf0, components)[1]
-scores3 = np.dot(pricedf0, components)[2]
-
 
 fig, ax = plt.subplots(figsize=(12, 9))
 
 np.random.seed(1)
 
 for i, ticker in enumerate(tickers2):
-  plt.scatter(scores2[i], scores3[i], color=np.random.rand(3,), marker='o')
+  plt.scatter(components[1][i], components[2][i], color=np.random.rand(3,), marker='o')
 
 plt.xlabel('2nd')
 plt.ylabel('3rd')
@@ -185,8 +181,8 @@ ax.spines['bottom'].set_position('zero')
 ax.spines['right'].set_color('none')
 ax.spines['top'].set_color('none')
 
-plt.xticks(np.arange(-2.5, 4, 0.5))
-plt.yticks(np.arange(-2, 3.5, 0.5))
+plt.xticks(np.arange(-0.5, 1, 0.25))
+plt.yticks(np.arange(-0.5, 1, 0.25))
 plt.grid(True)
 
 plt.show()
