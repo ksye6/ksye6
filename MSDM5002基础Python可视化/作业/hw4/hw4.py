@@ -53,7 +53,7 @@ from scipy.interpolate import RectBivariateSpline
 np.random.seed(1)
 N=30
 X,Y=np.meshgrid(np.linspace(0, 10, N), np.linspace(0, 10, N))
-Z=np.random.uniform(-0.7, 2.5, size=(N, N))
+Z=np.random.uniform(-0.3, 2.7, size=(N, N))
 
 # 使用 RectBivariateSpline 函数平滑地形高度数据
 f=RectBivariateSpline(np.linspace(0,10,N), np.linspace(0,10,N), Z, kx=3, ky=3)
@@ -64,7 +64,7 @@ smooth_X,smooth_Y=np.meshgrid(np.linspace(0,10, smooth_N), np.linspace(0,10, smo
 smooth_Z=f(smooth_Y[:,0],smooth_X[0,:])
 
 # 绘制等高线图和等高线填充图
-L=[-1.5,-1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3,3.5]
+L=[-1,-0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3,3.5]
 fig, ax=plt.subplots(figsize=(12,12), dpi=300)
 cset1=ax.contour(smooth_X, smooth_Y, smooth_Z, colors='black', linewidths=0.3, corner_mask=False, levels=L)
 cset2=ax.contourf(smooth_X, smooth_Y, smooth_Z, cmap='terrain',levels=L)
@@ -76,7 +76,6 @@ plt.clabel(cset1, levels=L,inline=True, fontsize=10, colors='black')
 ax.set_xlim([0,5])
 ax.set_ylim([0,5])
 ax.set_axis_off()
-
 
 plt.show()
 
