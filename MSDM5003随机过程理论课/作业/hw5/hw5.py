@@ -60,9 +60,8 @@ returns.drop(pd.to_datetime('2022-10-26'),inplace=True)
 
 print(returns.drop(columns=['^GSPC']))
 
-
 #2
-pricedf0=pricedf.drop(columns=['^GSPC'])
+pricedf0=returns.drop(columns=['^GSPC'])
 
 # 使用corr方法计算相关性矩阵
 correlation_matrix = pricedf0.corr()
@@ -152,8 +151,7 @@ plt.show()
 cumulative_variance=np.cumsum(sorted_eigenvalues) / np.sum(sorted_eigenvalues)
 cumulative_variance
 
-# 由于标准化后第一个主成分就足以得到80%的信息，因此我将阈值设定为95%，
-# 并选取N=3即前三个主成分用于后续的建模
+# 选取N=4即前三个主成分用于后续的建模
 
 #8
 
@@ -217,17 +215,21 @@ for k in range(len(pricedf)):
 
 #11
 equal_wt=np.array([0.1]*10)
-Projection_3=np.dot(components[0:3],equal_wt)
-Projection_3
+Projection_4=np.dot(components[0:4],equal_wt)
+Projection_4
 
 #12
-# 第一主成分符号为负，进行更改
-Projection_3[0]=-Projection_3[0]
-Projection_3
-components[0]=-components[0]
-components[0:3]
+# 第二三四主成分符号为负，进行更改
+Projection_4[1]=-Projection_4[1]
+Projection_4[2]=-Projection_4[2]
+Projection_4[3]=-Projection_4[3]
+Projection_4
+components[1]=-components[1]
+components[2]=-components[2]
+components[3]=-components[3]
+components[0:4]
 
-stock_wt_EWP=np.mean(components[0:3], axis=0)
+stock_wt_EWP=np.mean(components[0:4], axis=0)
 stock_wt_EWP
 
 #13
@@ -242,12 +244,12 @@ for k in range(len(pricedf)):
 #D
 
 #14
-Eigenvalue=sorted_eigenvalues[0:3]
+Eigenvalue=sorted_eigenvalues[0:4]
 Risk_wt=1/np.sqrt(Eigenvalue)
 
 stock_wt_DRP=np.zeros(10)
 for j in range(10):
-  stock_wt_DRP[j]=np.dot(components[0:3][:,j], Risk_wt)/sum(Risk_wt)
+  stock_wt_DRP[j]=np.dot(components[0:4][:,j], Risk_wt)/sum(Risk_wt)
 
 stock_wt_DRP_norm=stock_wt_DRP/np.sum(stock_wt_DRP)
 volume_DRP=stock_wt_DRP_norm/price
