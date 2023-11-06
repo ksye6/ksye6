@@ -1,6 +1,10 @@
 import numpy as np
-board = np.zeros((11,11), dtype=int)
-print(board)
+import copy
+import random
+import time
+import math
+# board = np.zeros((11,11), dtype=int)
+# print(board)
 
 import pygame as pg
 
@@ -119,97 +123,40 @@ def print_winner(surface, winner=0):
     surface.blit(text, textRect)
     pg.display.update()
 
-def check_winner(board):
-    array11 = np.concatenate((board[-4:,-4:], board[-4:,:],board[-4:,:4]), axis=1)
-    array12 = np.concatenate((board[:,-4:], board,board[:,:4]), axis=1)
-    array13 = np.concatenate((board[:4,-4:], board[:4,:],board[:4,:4]), axis=1)
-
-    board1 = np.concatenate((array11, array12, array13), axis=0)  # 19¡Á19 ÅĞ¶¨ÆåÅÌ
-    
-    n=len(board)
-    
-    i=row
-    j=col
-    
-    indexlist1=list([i+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
-    A1=list(board1[m[0],m[1]] for m in indexlist1)
-    count = 0
-    for num in A1:
-        if num == board[i][j]:
-            count += 1
-            if count == 5:
-                return board[i][j]
-        else:
-            count = 0
-    
-    indexlist2=list([i+k+4,j+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
-    A2=list(board1[m[0],m[1]] for m in indexlist2)
-    count = 0
-    for num in A2:
-        if num == board[i][j]:
-            count += 1
-            if count == 5:
-                return board[i][j]
-        else:
-            count = 0
-    
-    indexlist3=list([i+k+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
-    A3=list(board1[m[0],m[1]] for m in indexlist3)
-    count = 0
-    for num in A3:
-        if num == board[i][j]:
-            count += 1
-            if count == 5:
-                return board[i][j]
-        else:
-            count = 0
-    
-    indexlist4=list([i-k+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
-    A4=list(board1[m[0],m[1]] for m in indexlist4)
-    count = 0
-    for num in A4:
-        if num == board[i][j]:
-            count += 1
-            if count == 5:
-                return board[i][j]
-        else:
-            count = 0
-    
-    for i in range(n):
-        for j in range(n):
-            if board[i][j] == 0:
-                return 0
-    return 2
-
+####################################################################################################################
 
 
 def main_template(player_is_black=True):
     
-    global bline
+    global bline,row,col
     bline = 11                  # the board size is 11x11 => need to draw 11 lines on the board
     
     pg.init()
     surface = draw_board()
     
-    board = np.zeros((bline,bline), dtype=int)
+    board = Board()
+    
+    board.init_board()
+    
     running = True
     gameover = False
-    
+
     if not player_is_black:
         draw_stone(surface, [5, 5], 1)
+        board.update(1,60)
     
-    global row
-    global col
-    row=5
-    col=5
+    row=None
+    col=None
+    
+    colorai = -1 if player_is_black else 1
+    play_turn=[colorai,-colorai]
+    
+    AI=MCTS(board,play_turn)
     
     while running:
         
-        if check_winner(board) != 0:
-            print_winner(surface, winner=check_winner(board))
-       
         for event in pg.event.get():              # A for loop to process all the events initialized by the player
-            
+             
             if event.type == pg.QUIT:             # terminate if player closes the game window 
                 running = False
                 
@@ -219,27 +166,35 @@ def main_template(player_is_black=True):
                 if (x > pad+3.75*sep) and (x < w_size-pad-3.75*sep) and (y > pad+3.75*sep) and (y < w_size-pad-3.75*sep):
                     row = round((x-pad)/sep-4)     
                     col = round((y-pad)/sep-4)
+                    move = row * bline + col
                     
-                    if board[row, col] == 0:                             # update the board matrix if that position has not been occupied
+                    if board.states[move] == 0:                             # update the board matrix if that position has not been occupied
                         color = 1 if player_is_black else -1
-                        board[row, col] = color
+                        board.update(color,move)
                         draw_stone(surface, [row, col], color)
+                        
+                        if AI.check_winner(AI.board) != 0:
+                            print_winner(surface, winner=AI.check_winner(AI.board))
         
-        
-        if check_winner(board) != 0:
-            print_winner(surface, winner=check_winner(board))
-        
+                        else:
+                            color2 = -1 if player_is_black else 1
+                            aimove = AI.get_action()
+                            draw_stone(surface, board.move_to_location(aimove), color2)
+                            board.update(color2, aimove)
+                            if AI.check_winner(AI.board) != 0:
+                                print_winner(surface, winner=AI.check_winner(AI.board))
         
         ####################################################################################################
         ######################## Normally Your edit should be within the while loop ########################
         ####################################################################################################
-        
+
+    
         
     pg.quit()
-    
+
 
 if __name__ == '__main__':
-    main_template(True)
+    main_template(False)
 
 
 

@@ -7,16 +7,14 @@ class Board(object):
         self.width = width
         self.height = height 
         self.states = {} # 记录当前棋盘的状态，键是位置，值是棋子，这里用玩家来表示棋子类型
+        self.last_change = {"last":-1}
         self.n_in_row = n_in_row # 表示几个相同的棋子连成一线算作胜利
  
     def init_board(self):
-        if self.width < self.n_in_row or self.height < self.n_in_row:
-            raise Exception('board width and height can not less than %d' % self.n_in_row) # 棋盘不能过小
- 
         self.availables = list(range(self.width * self.height)) # 表示棋盘上所有合法的位置，这里简单的认为空的位置即合法
  
         for m in self.availables:
-            self.states[m] = -1 # -1表示当前位置为空
+            self.states[m] = 0 # 0表示当前位置为空
  
     def move_to_location(self, move):
         h = move  // self.width
@@ -36,12 +34,16 @@ class Board(object):
     def update(self, player, move): # player在move处落子，更新棋盘
         self.states[move] = player
         self.availables.remove(move)
+        self.last_change["last"] = move
 
-
+import random
 
 class MCTS(object):
-
-    def __init__(self, board, play_turn, n_in_row=5, time=10, max_actions=1000):
+    """
+    AI player, use Monte Carlo Tree Search with UCB
+    """
+ 
+    def __init__(self, board, play_turn, n_in_row=5, time=25, max_actions=3500):
  
         self.board = board
         self.play_turn = play_turn # 出手顺序
@@ -50,7 +52,7 @@ class MCTS(object):
         self.n_in_row = n_in_row
  
         self.player = play_turn[0] # 轮到电脑出手，所以出手顺序中第一个总是电脑
-        self.confident = 1.96 # UCB中的常数
+        self.confident = 2.1 # UCB中的常数 1.96
         self.plays = {} # 记录着法参与模拟的次数，键形如(player, move)，即（玩家，落子）
         self.wins = {} # 记录着法获胜的次数
         self.max_depth = 1
@@ -92,7 +94,7 @@ class MCTS(object):
  
         player = self.get_player(play_turn) # 获取当前出手的玩家
         visited_states = set() # 记录当前路径上的全部着法
-        winner = -1
+        winner = 0
         expand = True
  
         # Simulation
@@ -100,11 +102,11 @@ class MCTS(object):
             # Selection
             # 如果所有着法都有统计信息，则获取UCB最大的着法
             if all(plays.get((player, move)) for move in availables):
-                log_total = log(
+                log_total = math.log(
                     sum(plays[(player, move)] for move in availables))
                 value, move = max(
                     ((wins[(player, move)] / plays[(player, move)]) +
-                     sqrt(self.confident * log_total / plays[(player, move)]), move)
+                     math.sqrt(self.confident * log_total / plays[(player, move)]), move)
                     for move in availables) 
             else:
                 adjacents = []
@@ -112,14 +114,14 @@ class MCTS(object):
                     adjacents = self.adjacent_moves(board, player, plays) # 没有统计信息的邻近位置
      
                 if len(adjacents):
-                    move = choice(adjacents)
+                    move = random.choice(adjacents)
                 else:
                     peripherals = []
                     for move in availables:
                         if not plays.get((player, move)):
                             peripherals.append(move) # 没有统计信息的外围位置
-                    move = choice(peripherals)
-            
+                    move = random.choice(peripherals) 
+ 
             board.update(player, move)
  
             # Expand
@@ -134,7 +136,11 @@ class MCTS(object):
             visited_states.add((player, move))
  
             is_full = not len(availables)
-            win, winner = self.has_a_winner(board)
+            win = self.check_winner(board) != 0
+            
+            if win:
+                winner = self.check_winner(board)
+            
             if is_full or win: # 游戏结束，没有落子位置或有玩家获胜
                 break
  
@@ -162,14 +168,110 @@ class MCTS(object):
  
         return move
  
-    def has_a_winner(self, board):
+    def check_winner(self, board):
         """
         检查是否有玩家获胜
         """
-        moved = list(set(range(board.width * board.height)) - set(board.availables))
-        if(len(moved) < self.n_in_row + 2):
-            return False, -1
+        array_2d = np.array([board.states[key] for key in range(121)]).reshape(11, 11)
 
+        array11 = np.concatenate((array_2d[-4:,-4:], array_2d[-4:,:],array_2d[-4:,:4]), axis=1)
+        array12 = np.concatenate((array_2d[:,-4:], array_2d,array_2d[:,:4]), axis=1)
+        array13 = np.concatenate((array_2d[:4,-4:], array_2d[:4,:],array_2d[:4,:4]), axis=1)
+
+        board1 = np.concatenate((array11, array12, array13), axis=0)  # 19×19 判定棋盘
+
+        n=board.height
+        
+        tent=board.last_change["last"]
+        i=board.move_to_location(tent)[0]
+        j=board.move_to_location(tent)[1]
+
+        indexlist1=list([i+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A1=list(board1[m[0],m[1]] for m in indexlist1)
+        count = 0
+        for num in A1:
+            if num == array_2d[i][j]:
+                count += 1
+                if count == 5:
+                    return array_2d[i][j]
+            else:
+                count = 0
+
+        indexlist2=list([i+k+4,j+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A2=list(board1[m[0],m[1]] for m in indexlist2)
+        count = 0
+        for num in A2:
+            if num == array_2d[i][j]:
+                count += 1
+                if count == 5:
+                    return array_2d[i][j]
+            else:
+                count = 0
+
+        indexlist3=list([i+k+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A3=list(board1[m[0],m[1]] for m in indexlist3)
+        count = 0
+        for num in A3:
+            if num == array_2d[i][j]:
+                count += 1
+                if count == 5:
+                    return array_2d[i][j]
+            else:
+                count = 0
+
+        indexlist4=list([i-k+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A4=list(board1[m[0],m[1]] for m in indexlist4)
+        count = 0
+        for num in A4:
+            if num == array_2d[i][j]:
+                count += 1
+                if count == 5:
+                    return array_2d[i][j]
+            else:
+                count = 0
+
+        for a in range(n):
+            for b in range(n):
+                if array_2d[a][b] == 0:
+                    return 0
+        return 2
+
+        # moved = list(set(range(board.width * board.height)) - set(board.availables))
+        # if(len(moved) < self.n_in_row + 2):
+        #     return 0
+        # 
+        # width = board.width
+        # height = board.height
+        # states = board.states
+        # n = self.n_in_row
+        # count = 0
+        # for m in moved:
+        #     count += 1
+        #     h = m // width
+        #     w = m % width
+        #     player = states[m]
+        # 
+        #     if (w in range(width - n + 1) and
+        #         len(set(states[i] for i in range(m, m + n))) == 1): # 横向连成一线
+        #         return player
+        # 
+        #     if (h in range(height - n + 1) and
+        #         len(set(states[i] for i in range(m, m + n * width, width))) == 1): # 竖向连成一线
+        #         return player
+        # 
+        #     if (w in range(width - n + 1) and h in range(height - n + 1) and
+        #         len(set(states[i] for i in range(m, m + n * (width + 1), width + 1))) == 1): # 右斜向上连成一线
+        #         return player
+        # 
+        #     if (w in range(n - 1, width) and h in range(height - n + 1) and
+        #         len(set(states[i] for i in range(m, m + n * (width - 1), width - 1))) == 1): # 左斜向下连成一线
+        #         return player
+        # 
+        # if count == width*height:
+        #     return 2
+        # 
+        # return 0
+    
     def adjacent_moves(self, board, player, plays):
         """
         获取当前棋局中所有棋子的邻近位置中没有统计信息的位置
@@ -204,16 +306,6 @@ class MCTS(object):
             if plays.get((player, move)):
                 adjacents.remove(move)
         return adjacents
-
-
-
-
-
-
-
-
-
-
 
 
 
