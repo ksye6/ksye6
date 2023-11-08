@@ -128,7 +128,7 @@ def print_winner(surface, winner=0):
 
 def main_template(player_is_black=True):
     
-    global bline,row,col
+    global bline,row,col,board19
     bline = 11                  # the board size is 11x11 => need to draw 11 lines on the board
     
     pg.init()
@@ -152,6 +152,14 @@ def main_template(player_is_black=True):
     play_turn=[colorai,-colorai]
     
     AI=MCTS(board,play_turn)
+    
+    array_key = np.array(range(121)).reshape(11, 11)  # ¼ü¾ØÕó 0 - 128
+    
+    arraykey1 = np.concatenate((array_key[-4:,-4:], array_key[-4:,:],array_key[-4:,:4]), axis=1)
+    arraykey2 = np.concatenate((array_key[:,-4:], array_key,array_key[:,:4]), axis=1)
+    arraykey3 = np.concatenate((array_key[:4,-4:], array_key[:4,:],array_key[:4,:4]), axis=1)
+    
+    board19 = np.concatenate((arraykey1, arraykey2, arraykey3), axis=0)  # 19¡Á19 ¼üÆåÅÌ ¼ü¾ØÕó 0 - 128
     
     while running:
         

@@ -18,10 +18,10 @@
 # We can solve the coefficients a_i, a_i1, a_i2, a_i3, subject to these equality constraints.
 
 #2
-# 详见手写证明过程
+# See in the picture 详见手写证明过程 
 
 #3
-# 详见手写证明过程
+# See in the picture 详见手写证明过程
 
 #4
 # Piecewise polynomial regression divides the data set into multiple segments, 
@@ -105,12 +105,25 @@
 # When the number of nodes is limited or the complexity of the spline function is low, especially when the true relationship 
 # is close to linear, natural splines may have higher deviation.
 #
-# To sum up, in general, linear regression has the smallest bias.
+# To sum up, in general, regression tree has relatively the smallest bias if data nonlinear, or linear regression is better.
 
 #10
-# 
-# 
-# 
+# The variable importance measurement mainly uses "average decrease in accuracy" and "average decrease of Gini index".
+#
+# "The average reduction in accuracy" means that for each tree model: predict the cases outside the bag and 
+# obtain the accuracy; then randomly arrange the values of a certain variable on the cases outside the bag, 
+# and then bring them in the model to obtains the accuracy, and obtains the difference between the two accuracy rates.
+# Average the accuracy differences of all trees on this variable to get the "average decrease in accuracy". 
+#
+# For each tree, IM_Gini(Rm) = ∑k!=k'(p^mk*p^mk') = K∑k=1(p^mk(1 ??? p^mk)) = 1 ??? K∑k=1(p^mk^2) 
+#
+# The average decrease in the Gini index refers to, for a tree, obtaining the decrease in the Gini index 
+# caused by a certain variable acting as a splitting variable on each node;
+# summing up the decreases in the Gini index of the variable in all trees and dividing Based on the number of trees,
+# then the "average reduction of Gini index" is obtained.
+#
+# In the variable section/model selection part, we prefer variables with higher importance. 
+
 
 #(2)
 #1
@@ -215,6 +228,131 @@ par(mfrow=c(1,2))
 plot(gam.m3, se=TRUE,col="blue") 
 
 par(mfrow=c(1,1))
+
+
+#(3)
+#1
+traindf=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5054机器学习//作业//hw3//audit_train.csv")
+testdf=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5054机器学习//作业//hw3//audit_test.csv")
+
+traindf=na.omit(traindf)
+testdf=na.omit(testdf)
+
+traindf$Risk = as.factor(traindf$Risk)
+testdf$Risk = as.factor(testdf$Risk)
+
+library(tree)
+audittree=tree(Risk~.,traindf,control =tree.control(dim(traindf)[1],mindev=0.005,minsize=40))
+summary(audittree)
+plot(audittree)
+text(audittree,pretty=0)
+
+# Misclassification error rate: 0.06957 = 40 / 575 
+
+predp=predict(audittree,testdf)
+
+pred=rep(0,dim(testdf)[1])
+pred[predp[,2]>0.5]=1
+
+table(pred,testdf$Risk)
+length(which(pred==testdf$Risk))/dim(testdf)[1] # accuracy = 0.9441624
+
+#2
+cv.audittree = cv.tree(audittree,FUN=prune.misclass)
+names(cv.audittree)
+cv.audittree
+
+plot(cv.audittree$size ,cv.audittree$dev ,type="b",xlab="Size",ylab="CV Error")
+
+# size = 5
+
+audittree_pruned=prune.tree(audittree,best=5)
+summary(audittree_pruned)
+plot(audittree_pruned)
+text(audittree_pruned,pretty=0)
+
+predp2=predict(audittree_pruned,testdf)
+
+pred2=rep(0,dim(testdf)[1])
+pred2[predp2[,2]>0.5]=1
+
+table(pred2,testdf$Risk)
+length(which(pred2==testdf$Risk))/dim(testdf)[1] # accuracy = 0.9441624
+
+#3
+library(randomForest)
+
+set.seed(1)
+rf.audit=randomForest(Risk~.,data=traindf,mtry=13,ntree=25,importance=T,proximity=T,na.action=na.omit)   
+rf.audit
+
+# OOB estimate of  error rate: 9.91%
+#     0   1 class.error
+# 0 326  26  0.07386364
+# 1  31 192  0.13901345
+
+
+
+#4
+error = c()
+
+mlist = c(8,12,14,16,18)
+
+for (m in mlist) {
+  set.seed(1)
+  rfmodel=randomForest(Risk~.,data=traindf,mtry=m,ntree=25,importance=T,proximity=T,na.action=na.omit)
+  error=c(error,rfmodel$err.rate[25,1])
+}
+
+plot(mlist,error,type="b",xlab="m",ylab="Train Error") 
+
+error # m = 8 min
+
+set.seed(1)
+rfmodel2 = randomForest(Risk~.,data=traindf,mtry=8,ntree=25,importance=T,proximity=T,na.action=na.omit)
+
+yhat.rf = predict(rfmodel2,newdata=testdf,type="class")
+table(yhat.rf,testdf$Risk)
+length(which(yhat.rf==testdf$Risk))/dim(testdf)[1] # accuracy = 0.9695431
+
+rfmodel2$importance # Score, Risk_D, TOTAL, Money_Value
+
+#5
+# single tree: accuracy = 0.9441624
+# random forest: accuracy = 0.9695431 , which is better than a single tree. The model built on decision trees is less likely
+# to overfit after selecting appropriate parameters, which can reduce errors and deviations, and improve accuracy.
+# Due to the combination of multiple decision trees, diversity is effectively considered, and the combined result is
+# better than the result of a single tree。
+
+# summary(audittree_pruned):    "Score" "Money_Value" "TOTAL"  "District_Loss"
+# rfmodel2$importance:           Score,  Money_Value , TOTAL ,  Risk_D
+# 3 of them are the same.
+
+#(4)
+#a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

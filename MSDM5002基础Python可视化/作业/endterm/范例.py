@@ -8,6 +8,7 @@ class Board(object):
         self.height = height 
         self.states = {} # 记录当前棋盘的状态，键是位置，值是棋子，这里用玩家来表示棋子类型
         self.last_change = {"last":-1}
+        self.last_last_change = {"last_last":-1}
         self.n_in_row = n_in_row # 表示几个相同的棋子连成一线算作胜利
  
     def init_board(self):
@@ -34,6 +35,7 @@ class Board(object):
     def update(self, player, move): # player在move处落子，更新棋盘
         self.states[move] = player
         self.availables.remove(move)
+        self.last_last_change["last_last"] = self.last_change["last"]
         self.last_change["last"] = move
 
 import random
@@ -43,7 +45,7 @@ class MCTS(object):
     AI player, use Monte Carlo Tree Search with UCB
     """
  
-    def __init__(self, board, play_turn, n_in_row=5, time=25, max_actions=3500):
+    def __init__(self, board, play_turn, n_in_row=5, time=5, max_actions=1000):
  
         self.board = board
         self.play_turn = play_turn # 出手顺序
@@ -52,10 +54,11 @@ class MCTS(object):
         self.n_in_row = n_in_row
  
         self.player = play_turn[0] # 轮到电脑出手，所以出手顺序中第一个总是电脑
-        self.confident = 2.1 # UCB中的常数 1.96
+        self.confident = 1.96 # UCB中的常数 1.96
         self.plays = {} # 记录着法参与模拟的次数，键形如(player, move)，即（玩家，落子）
         self.wins = {} # 记录着法获胜的次数
         self.max_depth = 1
+        self.skip = False
  
     def get_action(self): # return move
  
@@ -65,6 +68,7 @@ class MCTS(object):
         # 每次计算下一步时都要清空plays和wins表，因为经过AI和玩家的2步棋之后，整个棋盘的局面发生了变化，原来的记录已经不适用了——原先普通的一步现在可能是致胜的一步，如果不清空，会影响现在的结果，导致这一步可能没那么“致胜”了
         self.plays = {} 
         self.wins = {}
+        self.skip = False
         simulations = 0
         begin = time.time()
         while time.time() - begin < self.calculation_time:
@@ -74,8 +78,10 @@ class MCTS(object):
             simulations += 1
  
         print("total simulations=", simulations)
- 
-        move = self.select_one_move() # 选择最佳着法
+        
+        self.skip = self.skipf(self.board)
+        move = self.select_one_move(self.board) # 选择最佳着法
+        
         location = self.board.move_to_location(move)
         print('Maximum depth searched:', self.max_depth)
  
@@ -101,18 +107,20 @@ class MCTS(object):
         for t in range(1, self.max_actions + 1):
             # Selection
             # 如果所有着法都有统计信息，则获取UCB最大的着法
+
             if all(plays.get((player, move)) for move in availables):
                 log_total = math.log(
                     sum(plays[(player, move)] for move in availables))
                 value, move = max(
                     ((wins[(player, move)] / plays[(player, move)]) +
                      math.sqrt(self.confident * log_total / plays[(player, move)]), move)
-                    for move in availables) 
+                    for move in availables)
+            
             else:
                 adjacents = []
                 if len(availables) > self.n_in_row:
                     adjacents = self.adjacent_moves(board, player, plays) # 没有统计信息的邻近位置
-     
+                
                 if len(adjacents):
                     move = random.choice(adjacents)
                 else:
@@ -121,7 +129,7 @@ class MCTS(object):
                         if not plays.get((player, move)):
                             peripherals.append(move) # 没有统计信息的外围位置
                     move = random.choice(peripherals) 
- 
+            
             board.update(player, move)
  
             # Expand
@@ -138,6 +146,7 @@ class MCTS(object):
             is_full = not len(availables)
             win = self.check_winner(board) != 0
             
+            winner=0
             if win:
                 winner = self.check_winner(board)
             
@@ -159,15 +168,25 @@ class MCTS(object):
         players.append(p)
         return p
  
-    def select_one_move(self):
-        percent_wins, move = max(
-            (self.wins.get((self.player, move), 0) /
-             self.plays.get((self.player, move), 1),
-             move)
-            for move in self.board.availables) # 选择胜率最高的着法
- 
+    def select_one_move(self, board):
+        
+        if self.skip:
+            percent_wins, move = max(
+                (self.wins.get((self.player, move), 0) /
+                self.plays.get((self.player, move), 1),
+                move)
+                for move in self.skip)
+        
+        else:
+            limited = self.adjacent2(board)+self.adjacent3(board)
+            percent_wins, move = max(
+                (self.wins.get((self.player, move), 0) /
+                 self.plays.get((self.player, move), 1),
+                 move)
+                for move in limited) # 选择胜率最高的着法 # self.board.availables
+        
         return move
- 
+    
     def check_winner(self, board):
         """
         检查是否有玩家获胜
@@ -286,20 +305,36 @@ class MCTS(object):
             w = m % width
             if w < width - 1:
                 adjacents.add(m + 1) # 右
+            if w == width - 1:
+                adjacents.add(m + 1 - width) # 右到左  
             if w > 0:
                 adjacents.add(m - 1) # 左
+            if w == 0:
+                adjacents.add(m - 1 + width) # 左到右
             if h < height - 1:
-                adjacents.add(m + width) # 上
+                adjacents.add(m + width) # 下
+            if h == height - 1:
+                adjacents.add(m + width - height*width) # 下到上
             if h > 0:
-                adjacents.add(m - width) # 下
+                adjacents.add(m - width) # 上
+            if h == 0:
+                adjacents.add(m - width + height*width) # 上到下
             if w < width - 1 and h < height - 1:
-                adjacents.add(m + width + 1) # 右上
+                adjacents.add(m + width + 1) # 右下
+            if w == width - 1 and h == height - 1:
+                adjacents.add(m + width + 1 - width - height*width) # 右下到左上
             if w > 0 and h < height - 1:
-                adjacents.add(m + width - 1) # 左上
+                adjacents.add(m + width - 1) # 左下
+            if w == 0 and h == height - 1:
+                adjacents.add(m + width - 1 + width - height*width) # 左下到右上
             if w < width - 1 and h > 0:
-                adjacents.add(m - width + 1) # 右下
+                adjacents.add(m - width + 1) # 右上
+            if w == width - 1 and h == 0:
+                adjacents.add(m - width + 1 - width + height*width) # 右上到左下
             if w > 0 and h > 0:
-                adjacents.add(m - width - 1) # 左下
+                adjacents.add(m - width - 1) # 左上
+            if w == 0 and h == 0:
+                adjacents.add(m - width - 1 + width + height*width) # 左上到右下
      
         adjacents = list(set(adjacents) - set(moved))
         for move in adjacents:
@@ -307,8 +342,539 @@ class MCTS(object):
                 adjacents.remove(move)
         return adjacents
 
+    def checkp4(self, board):
+        """
+        检查玩家4
+        """
+        array_2d = np.array([board.states[key] for key in range(121)]).reshape(11, 11)  # 值矩阵 -1,0,1
+    
+        array11 = np.concatenate((array_2d[-4:,-4:], array_2d[-4:,:],array_2d[-4:,:4]), axis=1)
+        array12 = np.concatenate((array_2d[:,-4:], array_2d,array_2d[:,:4]), axis=1)
+        array13 = np.concatenate((array_2d[:4,-4:], array_2d[:4,:],array_2d[:4,:4]), axis=1)
+    
+        board1 = np.concatenate((array11, array12, array13), axis=0)  # 19×19 判定棋盘 值矩阵 -1,0,1
+        
+        n=board.height
+        
+        tent=board.last_change["last"]
+        i=board.move_to_location(tent)[0]
+        j=board.move_to_location(tent)[1]
+        
+        player=array_2d[i][j]
+        
+        target410=[0, player, player, player, player]
+        target411=[player, player, player, player, 0]
+        target42=[player,player,0,player,player]
+        target430=[player,0,player,player,player]
+        target431=[player,player,player,0,player]
+        
+        window_size=len(target410)
+        results = set()
 
+        indexlist1=list([i+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A1=list(board1[m[0],m[1]] for m in indexlist1)
+        
+        for a in range(len(A1) - window_size + 1):
+            if A1[a:a+window_size] == target410:
+                results.add(board19[i+4][j+4-(4-a)])
+            if A1[a:a+window_size] == target411:
+                results.add(board19[i+4][j+4+a])
+            if A1[a:a+window_size] == target42:
+                results.add(board19[i+4][j+4-(2-a)])
+            if A1[a:a+window_size] == target430:
+                results.add(board19[i+4][j+4-(3-a)])
+            if A1[a:a+window_size] == target431:
+                results.add(board19[i+4][j+4-(1-a)])
+        
+        indexlist2=list([i+k+4,j+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A2=list(board1[m[0],m[1]] for m in indexlist2)
+        
+        for a in range(len(A2) - window_size + 1):
+            if A2[a:a+window_size] == target410:
+                results.add(board19[i+4-(4-a)][j+4])
+            if A2[a:a+window_size] == target411:
+                results.add(board19[i+4+a][j+4])
+            if A2[a:a+window_size] == target42:
+                results.add(board19[i+4-(2-a)][j+4])
+            if A2[a:a+window_size] == target430:
+                results.add(board19[i+4-(3-a)][j+4])
+            if A2[a:a+window_size] == target431:
+                results.add(board19[i+4-(1-a)][j+4])
+        
+        indexlist3=list([i+k+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A3=list(board1[m[0],m[1]] for m in indexlist3)
 
+        for a in range(len(A3) - window_size + 1):
+            if A3[a:a+window_size] == target410:
+                results.add(board19[i+4-(4-a)][j+4-(4-a)])
+            if A3[a:a+window_size] == target411:
+                results.add(board19[i+4+a][j+4+a])
+            if A3[a:a+window_size] == target42:
+                results.add(board19[i+4-(2-a)][j+4-(2-a)])
+            if A3[a:a+window_size] == target430:
+                results.add(board19[i+4-(3-a)][j+4-(3-a)])
+            if A3[a:a+window_size] == target431:
+                results.add(board19[i+4-(1-a)][j+4-(1-a)])
+        
+        indexlist4=list([i+k+4,j-k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A4=list(board1[m[0],m[1]] for m in indexlist4)
 
+        for a in range(len(A4) - window_size + 1):
+            if A4[a:a+window_size] == target410:
+                results.add(board19[i+4-(4-a)][j+4+(4-a)])
+            if A4[a:a+window_size] == target411:
+                results.add(board19[i+4+a][j+4-a])
+            if A4[a:a+window_size] == target42:
+                results.add(board19[i+4-(2-a)][j+4+(2-a)])
+            if A4[a:a+window_size] == target430:
+                results.add(board19[i+4-(3-a)][j+4+(3-a)])
+            if A4[a:a+window_size] == target431:
+                results.add(board19[i+4-(1-a)][j+4+(1-a)])
+        
+        return results
 
+    def checkai4(self, board):
+        """
+        检查ai4
+        """
+        array_2d = np.array([board.states[key] for key in range(121)]).reshape(11, 11)  # 值矩阵 -1,0,1
+    
+        array11 = np.concatenate((array_2d[-4:,-4:], array_2d[-4:,:],array_2d[-4:,:4]), axis=1)
+        array12 = np.concatenate((array_2d[:,-4:], array_2d,array_2d[:,:4]), axis=1)
+        array13 = np.concatenate((array_2d[:4,-4:], array_2d[:4,:],array_2d[:4,:4]), axis=1)
+    
+        board1 = np.concatenate((array11, array12, array13), axis=0)  # 19×19 判定棋盘 值矩阵 -1,0,1
+        
+        n=board.height
+        
+        tent=board.last_last_change["last_last"]
+        i=board.move_to_location(tent)[0]
+        j=board.move_to_location(tent)[1]
+        
+        player=array_2d[i][j]
+        
+        target410=[0, player, player, player, player]
+        target411=[player, player, player, player, 0]
+        target42=[player,player,0,player,player]
+        target430=[player,0,player,player,player]
+        target431=[player,player,player,0,player]
+        
+        window_size=len(target410)
+        results = set()
 
+        indexlist1=list([i+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A1=list(board1[m[0],m[1]] for m in indexlist1)
+        
+        for a in range(len(A1) - window_size + 1):
+            if A1[a:a+window_size] == target410:
+                results.add(board19[i+4][j+4-(4-a)])
+            if A1[a:a+window_size] == target411:
+                results.add(board19[i+4][j+4+a])
+            if A1[a:a+window_size] == target42:
+                results.add(board19[i+4][j+4-(2-a)])
+            if A1[a:a+window_size] == target430:
+                results.add(board19[i+4][j+4-(3-a)])
+            if A1[a:a+window_size] == target431:
+                results.add(board19[i+4][j+4-(1-a)])
+        
+        indexlist2=list([i+k+4,j+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A2=list(board1[m[0],m[1]] for m in indexlist2)
+        
+        for a in range(len(A2) - window_size + 1):
+            if A2[a:a+window_size] == target410:
+                results.add(board19[i+4-(4-a)][j+4])
+            if A2[a:a+window_size] == target411:
+                results.add(board19[i+4+a][j+4])
+            if A2[a:a+window_size] == target42:
+                results.add(board19[i+4-(2-a)][j+4])
+            if A2[a:a+window_size] == target430:
+                results.add(board19[i+4-(3-a)][j+4])
+            if A2[a:a+window_size] == target431:
+                results.add(board19[i+4-(1-a)][j+4])
+        
+        indexlist3=list([i+k+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A3=list(board1[m[0],m[1]] for m in indexlist3)
+
+        for a in range(len(A3) - window_size + 1):
+            if A3[a:a+window_size] == target410:
+                results.add(board19[i+4-(4-a)][j+4-(4-a)])
+            if A3[a:a+window_size] == target411:
+                results.add(board19[i+4+a][j+4+a])
+            if A3[a:a+window_size] == target42:
+                results.add(board19[i+4-(2-a)][j+4-(2-a)])
+            if A3[a:a+window_size] == target430:
+                results.add(board19[i+4-(3-a)][j+4-(3-a)])
+            if A3[a:a+window_size] == target431:
+                results.add(board19[i+4-(1-a)][j+4-(1-a)])
+        
+        indexlist4=list([i+k+4,j-k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A4=list(board1[m[0],m[1]] for m in indexlist4)
+
+        for a in range(len(A4) - window_size + 1):
+            if A4[a:a+window_size] == target410:
+                results.add(board19[i+4-(4-a)][j+4+(4-a)])
+            if A4[a:a+window_size] == target411:
+                results.add(board19[i+4+a][j+4-a])
+            if A4[a:a+window_size] == target42:
+                results.add(board19[i+4-(2-a)][j+4+(2-a)])
+            if A4[a:a+window_size] == target430:
+                results.add(board19[i+4-(3-a)][j+4+(3-a)])
+            if A4[a:a+window_size] == target431:
+                results.add(board19[i+4-(1-a)][j+4+(1-a)])
+        
+        return results
+
+    def checkp3(self, board):
+        """
+        检查玩家3
+        """
+        array_2d = np.array([board.states[key] for key in range(121)]).reshape(11, 11)  # 值矩阵 -1,0,1
+
+        array11 = np.concatenate((array_2d[-4:,-4:], array_2d[-4:,:],array_2d[-4:,:4]), axis=1)
+        array12 = np.concatenate((array_2d[:,-4:], array_2d,array_2d[:,:4]), axis=1)
+        array13 = np.concatenate((array_2d[:4,-4:], array_2d[:4,:],array_2d[:4,:4]), axis=1)
+
+        board1 = np.concatenate((array11, array12, array13), axis=0)  # 19×19 判定棋盘 值矩阵 -1,0,1
+
+        n=board.height
+
+        tent=board.last_change["last"]
+        i=board.move_to_location(tent)[0]
+        j=board.move_to_location(tent)[1]
+        
+        player=array_2d[i][j]
+        
+        target30=[0, player, player, player, 0]
+        target31=[0, player,0, player,player,0]
+        target32=[0, player,player,0, player,0]
+
+        window_size1=len(target30)
+        window_size2=len(target31)
+        
+        results = set()
+
+        indexlist1=list([i+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A1=list(board1[m[0],m[1]] for m in indexlist1)
+
+        for a in range(len(A1) - window_size1 + 1):
+            if A1[a:a+window_size1] == target30:
+                results.add(board19[i+4][j+4-(4-a)])
+                results.add(board19[i+4][j+4+a])
+        
+        for a in range(len(A1) - window_size2 + 1):
+            if A1[a:a+window_size2] == target31:
+                results.add(board19[i+4][j+4-(4-a)])
+                results.add(board19[i+4][j+4-(2-a)])
+                results.add(board19[i+4][j+4+(1+a)])
+            
+            if A1[a:a+window_size2] == target32:
+                results.add(board19[i+4][j+4-(4-a)])
+                results.add(board19[i+4][j+4-(1-a)])
+                results.add(board19[i+4][j+4+(1+a)])
+        
+        indexlist2=list([i+k+4,j+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A2=list(board1[m[0],m[1]] for m in indexlist2)
+
+        for a in range(len(A2) - window_size1 + 1):
+            if A2[a:a+window_size1] == target30:
+                results.add(board19[i+4-(4-a)][j+4])
+                results.add(board19[i+4+a][j+4])
+        
+        for a in range(len(A2) - window_size2 + 1):
+            if A2[a:a+window_size2] == target31:
+                results.add(board19[i+4-(4-a)][j+4])
+                results.add(board19[i+4-(2-a)][j+4])
+                results.add(board19[i+4+(1+a)][j+4])
+            
+            if A2[a:a+window_size2] == target32:
+                results.add(board19[i+4-(4-a)][j+4])
+                results.add(board19[i+4-(1-a)][j+4])
+                results.add(board19[i+4+(1+a)][j+4])
+        
+        indexlist3=list([i+k+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A3=list(board1[m[0],m[1]] for m in indexlist3)
+
+        for a in range(len(A3) - window_size1 + 1):
+            if A3[a:a+window_size1] == target30:
+                results.add(board19[i+4-(4-a)][j+4-(4-a)])
+                results.add(board19[i+4+a][j+4+a])
+        
+        for a in range(len(A3) - window_size2 + 1):
+            if A3[a:a+window_size2] == target31:
+                results.add(board19[i+4-(4-a)][j+4-(4-a)])
+                results.add(board19[i+4-(2-a)][j+4-(2-a)])
+                results.add(board19[i+4+(1+a)][j+4+(1+a)])
+            
+            if A3[a:a+window_size2] == target32:
+                results.add(board19[i+4-(4-a)][j+4-(4-a)])
+                results.add(board19[i+4-(1-a)][j+4-(1-a)])
+                results.add(board19[i+4+(1+a)][j+4+(1+a)])
+
+        indexlist4=list([i+k+4,j-k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A4=list(board1[m[0],m[1]] for m in indexlist4)
+
+        for a in range(len(A4) - window_size1 + 1):
+            if A4[a:a+window_size1] == target30:
+                results.add(board19[i+4-(4-a)][j+4+(4-a)])
+                results.add(board19[i+4+a][j+4-a])
+        
+        for a in range(len(A4) - window_size2 + 1):
+            if A4[a:a+window_size2] == target31:
+                results.add(board19[i+4-(4-a)][j+4+(4-a)])
+                results.add(board19[i+4-(2-a)][j+4+(2-a)])
+                results.add(board19[i+4+(1+a)][j+4-(1+a)])
+            
+            if A4[a:a+window_size2] == target32:
+                results.add(board19[i+4-(4-a)][j+4+(4-a)])
+                results.add(board19[i+4-(1-a)][j+4+(1-a)])
+                results.add(board19[i+4+(1+a)][j+4-(1+a)])
+
+        return results
+
+    def checkai3(self, board):
+        """
+        检查玩家3
+        """
+        array_2d = np.array([board.states[key] for key in range(121)]).reshape(11, 11)  # 值矩阵 -1,0,1
+
+        array11 = np.concatenate((array_2d[-4:,-4:], array_2d[-4:,:],array_2d[-4:,:4]), axis=1)
+        array12 = np.concatenate((array_2d[:,-4:], array_2d,array_2d[:,:4]), axis=1)
+        array13 = np.concatenate((array_2d[:4,-4:], array_2d[:4,:],array_2d[:4,:4]), axis=1)
+
+        board1 = np.concatenate((array11, array12, array13), axis=0)  # 19×19 判定棋盘 值矩阵 -1,0,1
+
+        n=board.height
+
+        tent=board.last_last_change["last_last"]
+        i=board.move_to_location(tent)[0]
+        j=board.move_to_location(tent)[1]
+        
+        player=array_2d[i][j]
+        
+        target30=[0, player, player,player, 0]
+        target31=[0, player,0, player,player,0]
+        target32=[0, player,player,0, player,0]
+
+        window_size1=len(target30)
+        window_size2=len(target31)
+        
+        results = set()
+
+        indexlist1=list([i+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A1=list(board1[m[0],m[1]] for m in indexlist1)
+
+        for a in range(len(A1) - window_size1 + 1):
+            if A1[a:a+window_size1] == target30:
+                results.add(board19[i+4][j+4-(4-a)])
+                results.add(board19[i+4][j+4+a])
+        
+        for a in range(len(A1) - window_size2 + 1):
+            if A1[a:a+window_size2] == target31:
+                results.add(board19[i+4][j+4-(4-a)])
+                results.add(board19[i+4][j+4-(2-a)])
+                results.add(board19[i+4][j+4+(1+a)])
+            
+            if A1[a:a+window_size2] == target32:
+                results.add(board19[i+4][j+4-(4-a)])
+                results.add(board19[i+4][j+4-(1-a)])
+                results.add(board19[i+4][j+4+(1+a)])
+        
+        indexlist2=list([i+k+4,j+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A2=list(board1[m[0],m[1]] for m in indexlist2)
+
+        for a in range(len(A2) - window_size1 + 1):
+            if A2[a:a+window_size1] == target30:
+                results.add(board19[i+4-(4-a)][j+4])
+                results.add(board19[i+4+a][j+4])
+        
+        for a in range(len(A2) - window_size2 + 1):
+            if A2[a:a+window_size2] == target31:
+                results.add(board19[i+4-(4-a)][j+4])
+                results.add(board19[i+4-(2-a)][j+4])
+                results.add(board19[i+4+(1+a)][j+4])
+            
+            if A2[a:a+window_size2] == target32:
+                results.add(board19[i+4-(4-a)][j+4])
+                results.add(board19[i+4-(1-a)][j+4])
+                results.add(board19[i+4+(1+a)][j+4])
+        
+        indexlist3=list([i+k+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A3=list(board1[m[0],m[1]] for m in indexlist3)
+
+        for a in range(len(A3) - window_size1 + 1):
+            if A3[a:a+window_size1] == target30:
+                results.add(board19[i+4-(4-a)][j+4-(4-a)])
+                results.add(board19[i+4+a][j+4+a])
+        
+        for a in range(len(A3) - window_size2 + 1):
+            if A3[a:a+window_size2] == target31:
+                results.add(board19[i+4-(4-a)][j+4-(4-a)])
+                results.add(board19[i+4-(2-a)][j+4-(2-a)])
+                results.add(board19[i+4+(1+a)][j+4+(1+a)])
+            
+            if A3[a:a+window_size2] == target32:
+                results.add(board19[i+4-(4-a)][j+4-(4-a)])
+                results.add(board19[i+4-(1-a)][j+4-(1-a)])
+                results.add(board19[i+4+(1+a)][j+4+(1+a)])
+
+        indexlist4=list([i+k+4,j-k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A4=list(board1[m[0],m[1]] for m in indexlist4)
+
+        for a in range(len(A4) - window_size1 + 1):
+            if A4[a:a+window_size1] == target30:
+                results.add(board19[i+4-(4-a)][j+4+(4-a)])
+                results.add(board19[i+4+a][j+4-a])
+        
+        for a in range(len(A4) - window_size2 + 1):
+            if A4[a:a+window_size2] == target31:
+                results.add(board19[i+4-(4-a)][j+4+(4-a)])
+                results.add(board19[i+4-(2-a)][j+4+(2-a)])
+                results.add(board19[i+4+(1+a)][j+4-(1+a)])
+            
+            if A4[a:a+window_size2] == target32:
+                results.add(board19[i+4-(4-a)][j+4+(4-a)])
+                results.add(board19[i+4-(1-a)][j+4+(1-a)])
+                results.add(board19[i+4+(1+a)][j+4-(1+a)])
+
+        return results
+
+    def skipf(self, board):
+        indic = self.checkai4(board)
+        if len(indic) != 0:
+            return list(indic)
+        else:
+            indic2 = self.checkp4(board)
+            if len(indic2) != 0:
+                return list(indic2)
+            else:
+                indic3 = self.checkp3(board)
+                indic4 = self.checkai3(board)
+                if len(indic3) != 0 and len(indic4) == 0:
+                    return list(indic3)
+                elif len(indic3) != 0 and len(indic4) != 0:
+                    return list(indic3)+list(indic4)
+                else:
+                    fb = self.checkpforbid(board)
+                    if len(fb) != 0 and len(indic4) != 0:
+                        return list(fb)+list(indic4)
+                    elif len(fb) != 0 and len(indic4) == 0:
+                        return list(fb)
+                    # elif len(fb) == 0 and len(indic4) != 0:
+                    #     return list(indic4)
+                    else:
+                        return False
+
+    def adjacent2(self, board):
+      
+        moved = list(set(range(board.width * board.height)) - set(board.availables))
+        adjacents = set()
+        width = board.width
+        height = board.height
+     
+        for m in moved:
+            h = m // width
+            w = m % width
+            if w < width - 1:
+                adjacents.add(m + 1) # 右
+            if w == width - 1:
+                adjacents.add(m + 1 - width) # 右到左  
+            if w > 0:
+                adjacents.add(m - 1) # 左
+            if w == 0:
+                adjacents.add(m - 1 + width) # 左到右
+            if h < height - 1:
+                adjacents.add(m + width) # 下
+            if h == height - 1:
+                adjacents.add(m + width - height*width) # 下到上
+            if h > 0:
+                adjacents.add(m - width) # 上
+            if h == 0:
+                adjacents.add(m - width + height*width) # 上到下
+            if w < width - 1 and h < height - 1:
+                adjacents.add(m + width + 1) # 右下
+            if w == width - 1 and h == height - 1:
+                adjacents.add(m + width + 1 - width - height*width) # 右下到左上
+            if w > 0 and h < height - 1:
+                adjacents.add(m + width - 1) # 左下
+            if w == 0 and h == height - 1:
+                adjacents.add(m + width - 1 + width - height*width) # 左下到右上
+            if w < width - 1 and h > 0:
+                adjacents.add(m - width + 1) # 右上
+            if w == width - 1 and h == 0:
+                adjacents.add(m - width + 1 - width + height*width) # 右上到左下
+            if w > 0 and h > 0:
+                adjacents.add(m - width - 1) # 左上
+            if w == 0 and h == 0:
+                adjacents.add(m - width - 1 + width + height*width) # 左上到右下
+     
+        adjacents = list(set(adjacents) - set(moved))
+
+        return adjacents
+
+    def adjacent3(self, board):
+      
+        moved = list(set(range(board.width * board.height)) - set(board.availables))
+        moved += self.adjacent2(board)
+        adjacents = set()
+        width = board.width
+        height = board.height
+     
+        for m in moved:
+            h = m // width
+            w = m % width
+            if w < width - 1:
+                adjacents.add(m + 1) # 右
+            if w == width - 1:
+                adjacents.add(m + 1 - width) # 右到左  
+            if w > 0:
+                adjacents.add(m - 1) # 左
+            if w == 0:
+                adjacents.add(m - 1 + width) # 左到右
+            if h < height - 1:
+                adjacents.add(m + width) # 下
+            if h == height - 1:
+                adjacents.add(m + width - height*width) # 下到上
+            if h > 0:
+                adjacents.add(m - width) # 上
+            if h == 0:
+                adjacents.add(m - width + height*width) # 上到下
+            if w < width - 1 and h < height - 1:
+                adjacents.add(m + width + 1) # 右下
+            if w == width - 1 and h == height - 1:
+                adjacents.add(m + width + 1 - width - height*width) # 右下到左上
+            if w > 0 and h < height - 1:
+                adjacents.add(m + width - 1) # 左下
+            if w == 0 and h == height - 1:
+                adjacents.add(m + width - 1 + width - height*width) # 左下到右上
+            if w < width - 1 and h > 0:
+                adjacents.add(m - width + 1) # 右上
+            if w == width - 1 and h == 0:
+                adjacents.add(m - width + 1 - width + height*width) # 右上到左下
+            if w > 0 and h > 0:
+                adjacents.add(m - width - 1) # 左上
+            if w == 0 and h == 0:
+                adjacents.add(m - width - 1 + width + height*width) # 左上到右下
+     
+        adjacents = list(set(adjacents) - set(moved))
+
+        return adjacents
+
+    def checkpforbid(self, board):
+        pool = self.adjacent2(board)+self.adjacent3(board)
+        forbidmove = set()
+        for i in pool:
+            board_copy = copy.deepcopy(board)
+            board_copy.update(-self.player, i)
+            g3 = self.checkp3(board_copy)
+            g4 = self.checkp4(board_copy)
+            if len(g3) > 3 or len(g4) > 2 or (len(g4) > 0 and len(g3) > 0):
+                forbidmove.add(i)
+        
+        return forbidmove
+        
+        
+        
+        
+        
+        
+        
