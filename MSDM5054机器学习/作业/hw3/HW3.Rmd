@@ -1,27 +1,40 @@
+---
+title: "HW3"
+author: "20989977 Zhang Mingtao"
+date: "2023/11/10"
+output: html_document
+---  
+0.
+```{r}
+library(reticulate)
+```
+
+1.
+```{r}
 #(1)
 #1
-# The cubic spline model for a set of data points (x1, y1), (x2, y2), ..., (xn, yn) and knots ¦Î1, ¦Î2, ..., ¦ÎK can be written
+# The cubic spline model for a set of data points (x1, y1), (x2, y2), ..., (xn, yn) and knots Î¾1, Î¾2, ..., Î¾K can be written
 # as follows:
-# For each interval [¦Îi, ¦Îi+1], we fit a cubic polynomial of the form:
+# For each interval [Î¾i, Î¾i+1], we fit a cubic polynomial of the form:
 # f_i(x) = a_i0 + a_i1*x + a_i2*x^2 + a_i3*x^3
 #
-# We then apply the continuity and linearity constraints at each knot ¦Îi:
+# We then apply the continuity and linearity constraints at each knot Î¾i:
 #
 # Continuity Constraints:
-# f_i(¦Îi) = f_i+1(¦Îi)
-# f_i'(¦Îi) = f_i+1'(¦Îi)
-# f_i''(¦Îi) = f_i+1''(¦Îi)
+# f_i(Î¾i) = f_i+1(Î¾i)
+# f_i'(Î¾i) = f_i+1'(Î¾i)
+# f_i''(Î¾i) = f_i+1''(Î¾i)
 #
-# And also Linearity Constraints at endpoints (-¡Ş, ¦Î1) and (¦ÎK, ¡Ş).
+# And also Linearity Constraints at endpoints (-âˆ, Î¾1) and (Î¾K, âˆ).
 # The objective function can be a least squares error.
 # Now the problem becomes a linear regression problem with equality constraints.
 # We can solve the coefficients a_i, a_i1, a_i2, a_i3, subject to these equality constraints.
 
 #2
-# See in the picture Ïê¼ûÊÖĞ´Ö¤Ã÷¹ı³Ì 
+# See in the picture è¯¦è§æ‰‹å†™è¯æ˜è¿‡ç¨‹ 
 
 #3
-# See in the picture Ïê¼ûÊÖĞ´Ö¤Ã÷¹ı³Ì
+# See in the picture è¯¦è§æ‰‹å†™è¯æ˜è¿‡ç¨‹
 
 #4
 # Piecewise polynomial regression divides the data set into multiple segments, 
@@ -46,7 +59,7 @@
 
 #6
 # For a local demonstration regression model, assume that we use the least squares method for demonstration:
-# y_hat(x) = ¦²(1~n) w_i(x)*y_i
+# y_hat(x) = Î£(1~n) w_i(x)*y_i
 # Bias(x) = E[y_hat(x)] - y
 # Variance(x) = E[(y_hat(x) - E[y_hat(x)])^2]
 
@@ -61,7 +74,7 @@
 # When the bandwidth increases, the range of data points covered by the model's weight function w_i(x) increases, 
 # and the model is relatively insensitive to changes in neighbor data points.
 #
-# Conclusion: h¡ü, Bias¡ü, Var¡ı
+# Conclusion: hâ†‘, Biasâ†‘, Varâ†“
 
 #7
 # I think Regression tree is most similar to option (b) Piecewise constant regression:
@@ -115,7 +128,7 @@
 # and then bring them in the model to obtains the accuracy, and obtains the difference between the two accuracy rates.
 # Average the accuracy differences of all trees on this variable to get the "average decrease in accuracy". 
 #
-# For each tree, IM_Gini(Rm) = ¡Æk!=k'(p^mk*p^mk') = K¡Æk=1(p^mk(1 ??? p^mk)) = 1 ??? K¡Æk=1(p^mk^2) 
+# For each tree, IM_Gini(Rm) = âˆ‘k!=k'(p^mk*p^mk') = Kâˆ‘k=1(p^mk(1 ??? p^mk)) = 1 ??? Kâˆ‘k=1(p^mk^2) 
 #
 # The average decrease in the Gini index refers to, for a tree, obtaining the decrease in the Gini index 
 # caused by a certain variable acting as a splitting variable on each node;
@@ -125,9 +138,13 @@
 # In the variable section/model selection part, we prefer variables with higher importance. 
 
 
+```  
+
+2.
+```{r}
 #(2)
 #1
-df1=read.csv("C://Users//ÕÅÃúèº//Desktop//Ñ§Òµ//¸Û¿Æ´ó//MSDM5054»úÆ÷Ñ§Ï°//×÷Òµ//hw3//trees.csv")
+df1=read.csv("C://Users//å¼ é“­éŸ¬//Desktop//å­¦ä¸š//æ¸¯ç§‘å¤§//MSDM5054æœºå™¨å­¦ä¹ //ä½œä¸š//hw3//trees.csv")
 fit.1=lm(Volume ~ poly(Girth, 1, raw = TRUE), data = df1)
 fit.2=lm(Volume ~ poly(Girth, 2, raw = TRUE), data = df1)
 fit.3=lm(Volume ~ poly(Girth, 3, raw = TRUE), data = df1)
@@ -230,10 +247,14 @@ plot(gam.m3, se=TRUE,col="blue")
 par(mfrow=c(1,1))
 
 
+```  
+
+3.
+```{r}
 #(3)
 #1
-traindf=read.csv("C://Users//ÕÅÃúèº//Desktop//Ñ§Òµ//¸Û¿Æ´ó//MSDM5054»úÆ÷Ñ§Ï°//×÷Òµ//hw3//audit_train.csv")
-testdf=read.csv("C://Users//ÕÅÃúèº//Desktop//Ñ§Òµ//¸Û¿Æ´ó//MSDM5054»úÆ÷Ñ§Ï°//×÷Òµ//hw3//audit_test.csv")
+traindf=read.csv("C://Users//å¼ é“­éŸ¬//Desktop//å­¦ä¸š//æ¸¯ç§‘å¤§//MSDM5054æœºå™¨å­¦ä¹ //ä½œä¸š//hw3//audit_train.csv")
+testdf=read.csv("C://Users//å¼ é“­éŸ¬//Desktop//å­¦ä¸š//æ¸¯ç§‘å¤§//MSDM5054æœºå™¨å­¦ä¹ //ä½œä¸š//hw3//audit_test.csv")
 
 traindf=na.omit(traindf)
 testdf=na.omit(testdf)
@@ -322,43 +343,278 @@ rfmodel2$importance # Score, Risk_D, TOTAL, Money_Value
 # random forest: accuracy = 0.9695431 , which is better than a single tree. The model built on decision trees is less likely
 # to overfit after selecting appropriate parameters, which can reduce errors and deviations, and improve accuracy.
 # Due to the combination of multiple decision trees, diversity is effectively considered, and the combined result is
-# better than the result of a single tree¡£
+# better than the result of a single treeã€‚
 
 # summary(audittree_pruned):    "Score" "Money_Value" "TOTAL"  "District_Loss"
 # rfmodel2$importance:           Score,  Money_Value , TOTAL ,  Risk_D
 # 3 of them are the same.
 
+```  
+
+4.
+```{python}
 #(4)
 # see the python code since I'm not able to define a class in R but I can do that in python.
+#(4)
 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
+train = pd.read_csv("C://Users//å¼ é“­éŸ¬//Desktop//å­¦ä¸š//æ¸¯ç§‘å¤§//MSDM5054æœºå™¨å­¦ä¹ //ä½œä¸š//hw3//Hitters_train.csv")
+test = pd.read_csv("C://Users//å¼ é“­éŸ¬//Desktop//å­¦ä¸š//æ¸¯ç§‘å¤§//MSDM5054æœºå™¨å­¦ä¹ //ä½œä¸š//hw3//Hitters_test.csv")
 
+train = train[["Years", "Hits", "RBI","Walks", "PutOuts", "Runs","Salary"]]
+test = test[["Years", "Hits", "RBI","Walks", "PutOuts", "Runs","Salary"]]
 
+train.dropna(inplace=True)
+test.dropna(inplace=True)
 
+import random
+import collections
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.model_selection import train_test_split
+from collections import deque
+ 
+class TreeNode:
+    def __init__(self,labels_idx=None,left=None,right=None,split_idx=None,is_discrete=None,split_value=None,father=None) -> None:
 
+        self.labels_idx = labels_idx     # è®­ç»ƒé›†çš„labelå¯¹åº”çš„ä¸‹æ ‡
+        self.left = left                 # å·¦å­æ ‘
+        self.right = right               # å³å­æ ‘
+        self.split_idx = split_idx       # åˆ’åˆ†ç‰¹å¾å¯¹åº”çš„ä¸‹æ ‡
+        self.is_discrete = is_discrete   # æ˜¯å¦ç¦»æ•£
+        self.split_value = split_value   # åˆ’åˆ†ç‚¹
+        self.father = father             # çˆ¶èŠ‚ç‚¹
+ 
+class RegressionTree:
+    
+    def __init__(self,data,labels,is_discrete,validate_ratio=0.1):
 
+        self.data = np.array(data)
+        self.labels=np.array(labels)
+        self.feature_num = self.data.shape[1]
+        self.is_discrete = is_discrete
+        self.validate_ratio = validate_ratio
+        self.leaves = []
+        if validate_ratio>0:
+            all_index = range(data.shape[0])
+            self.train_idx,self.test_idx = train_test_split(all_index,test_size=validate_ratio)
+            self.validate_data = self.data[self.test_idx,:]
+            self.validate_label = self.labels[self.test_idx]
+            self.train_data = self.data[self.train_idx,:]
+            self.train_label = self.labels[self.train_idx]
+    
+    def sum_std(self,x):
+        
+        return np.sum(np.abs(x-np.mean(x)))/len(x)  
 
+    def choose_feature(self,x,left_labels):
 
+        std_list = []
+        split_value_list = []
+        for i in range(x.shape[1]):
+            final_split_value,final_sum_std=self.calc_std(x[:,i],self.is_discrete[i],left_labels)
+            std_list.append(final_sum_std)
+            split_value_list.append(final_split_value)
+        idx = np.argmin(std_list)
+        return idx,split_value_list[idx]
+    
+    def calc_std(self,feature,is_discrete,labels):
 
+        final_sum_std = float("inf")
+        final_split_value = 0
+        idx = range(len(feature))
+        feature_with_idx = np.c_[idx,feature]
+        labels = np.array(labels)
+        if is_discrete:
+            values = list(set(feature))
+            idx_dict = {v:[] for v in values}
+            for i,fea in feature_with_idx:
+                idx_dict[fea].append(i)
+            for v in values:
+                anti_idx = [i for i in idx if i not in idx_dict[v]]
+                left = labels[idx_dict[v]]
+                right = labels[anti_idx]
+                if left.shape[0]==0 or right.shape[0] == 0:
+                    continue
+                sum_std = self.sum_std(left)+self.sum_std(right)
+                if sum_std<final_sum_std:
+                    final_sum_std = sum_std
+                    final_split_value = v
+        else:
+            feature_with_idx = feature_with_idx[feature_with_idx[:,1].argsort()]
+            feature = feature_with_idx[:,1]
+            idx = feature_with_idx[:,0]
+            for i in range(len(feature)-1):
+                if feature[i]==feature[i+1]:
+                    continue
+                split_value = (feature[i]+feature[i+1])/2
+                idx_left = idx[:i+1]
+                idx_right = idx[i+1:]
+                sum_std = self.sum_std(labels[idx_left.astype('int64')])+self.sum_std(labels[idx_right.astype('int64')])
+                if sum_std<final_sum_std:
+                    final_sum_std = sum_std
+                    final_split_value = split_value
+                    
+        return final_split_value,final_sum_std
+    
+    def generate_tree(self,idxs,min_ratio):
 
+        root = TreeNode(labels_idx=idxs)
+        
+        if len(idxs)/self.data.shape[0]<=min_ratio:
+            return root
+        
+        idx,split_value = self.choose_feature(self.data[idxs,:],self.labels[idxs])
+        root.split_value = split_value
+        root.split_idx = idx
+        left_idxs = []
+        right_idxs = []
+        
+        if self.is_discrete[idx]:
+            for i in idxs:
+                if self.data[i,idx] != split_value:
+                    right_idxs.append(i)
+                else:
+                    left_idxs.append(i)
+        
+        else:
+            for i in idxs:
+                if self.data[i,idx] <= split_value:
+                    right_idxs.append(i)
+                else:
+                    left_idxs.append(i)
+        
+        left_idxs = np.array(left_idxs)
+        right_idxs = np.array(right_idxs)
+        root.left = self.generate_tree(left_idxs,min_ratio)
+        
+        if root.left:
+            root.left.father = root
+        
+        root.right = self.generate_tree(right_idxs,min_ratio)
+        
+        if root.right:
+            root.right.father = root
+        
+        return root
+ 
+    def train(self,max_depth = 0,min_ratio=0.05):
 
+        if self.validate_ratio>0:
+            idx = self.train_idx
+        else:
+            idx = range(len(self.labels))
+        
+        self.tree = self.generate_tree(idx,min_ratio)
+        
+        # åå‰ªæ
+        if self.validate_ratio>0:
+            self.find_leaves(self.tree)
+            nodes = deque(self.leaves)
+            while len(nodes)>0:
+                n=len(nodes)
+                for _ in range(n):
+                    node = nodes.popleft()
+                    if not node.father:
+                        nodes = []
+                        break
+                    valid_pred = self.predict(self.validate_data)
+                    mse_before = self.get_mse(valid_pred,self.validate_label)
+                    backup_left = node.father.left
+                    backup_right= node.father.right
+                    node.father.left = None
+                    node.father.right = None
+                    valid_pred = self.predict(self.validate_data)
+                    mse_after = self.get_mse(valid_pred,self.validate_label)
+                    if mse_after>mse_before:
+                        node.father.left = node.father.left
+                        node.father.right = node.father.right
+                    else:
+                        nodes.append(node.father)
+        # æ ‘æ·±
+        if max_depth>0:
+            nodes = deque([self.tree])
+            d=1
+            while len(nodes)>0 and d<max_depth:
+                n = len(nodes)
+                for _ in range(n):
+                    node = nodes.popleft()
+                    if node.left:
+                        nodes.append(node.left)
+                    if node.right:
+                        nodes.append(node.right)
+                d += 1
+            if len(nodes)>0:
+                for node in nodes:
+                    node.left=None
+                    node.right=None
+        
+    def find_leaves(self,node):
 
+        if not node.left and not node.right:
+            self.leaves.append(node)
+            return None
+        else:
+            if node.left:
+                self.find_leaves(node.left)
+            if node.right:
+                self.find_leaves(node.right)
+        
+    def predict_one(self,x,node=None):
 
+        if node == None:
+            node = self.tree
+        while node.left and node.right:
+            idx = node.split_idx
+            if self.is_discrete[idx]:
+                if x[idx]==node.split_value:
+                    node = node.left
+                else:
+                    node = node.right
+            else:
+                if x[idx]>node.split_value:
+                    node = node.right
+                else:
+                    node = node.left
+ 
+        res_idx = node.labels_idx
+        return np.mean(self.labels[res_idx])
+    
+    def predict(self,x,node=None):
 
+        x = np.array(x)
+        predicts = []
+        for i in range(x.shape[0]):
+            res = self.predict_one(x[i,:],node)
+            predicts.append(res)
+        return predicts
+ 
+    def get_mse(self,y_pred,y_true):
 
+        y_pred = np.array(y_pred)
+        y_true = np.array(y_true)
+        
+        return np.mean(np.square(y_pred-y_true))
 
+x_train = train.iloc[:,0:6].values
+x_test = test.iloc[:,0:6].values
+y_train = train.iloc[:,6].values
+y_test = test.iloc[:,6].values
 
+rt = RegressionTree(x_train,y_train,is_discrete=[False,False,False,False,False,False],validate_ratio=0.1)
 
+rt.train(max_depth=15,min_ratio=0.05) # é™åˆ¶æ·±åº¦å’Œæœ€å°v_gain (å®é™…å‡½æ•°å·²ç»è¿›è¡Œå‰ªæ)
+res = rt.predict(x_test)
+rt.get_mse(res,y_test)
 
+# ############ å¯¹æ¯”åº“ #############
+# from sklearn.tree import DecisionTreeRegressor
+# 
+# tes = DecisionTreeRegressor()
+# tes.fit(x_train,y_train)
+# res2 = tes.predict(x_test)
+# rt.get_mse(res2,y_test)
 
-
-
-
-
-
-
-
-
-
-
-
+```  
