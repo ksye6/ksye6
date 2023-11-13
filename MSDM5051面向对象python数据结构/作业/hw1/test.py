@@ -106,6 +106,8 @@ def BST_sort(data):
   return sorted_data
 
 
+# column 0
+
 check_sort_result(bubble_sort,VT.tolist())
 check_sort_result(insertion_sort,VT.tolist())
 sys.setrecursionlimit(50000)
@@ -118,6 +120,8 @@ check_sort_result(AVL_sort,VT.tolist())
 check_performance(BST_sort,VT.tolist())
 
 
+# column 1
+
 check_sort_result(bubble_sort,DT.tolist())
 check_sort_result(insertion_sort,DT.tolist())
 sys.setrecursionlimit(50000)
@@ -129,6 +133,8 @@ check_sort_result(AVL_sort,DT.tolist())
 
 check_performance(quicksort,DT.tolist())
 
+
+# column 2
 
 check_sort_result(bubble_sort,GID.tolist())
 check_sort_result(insertion_sort,GID.tolist())

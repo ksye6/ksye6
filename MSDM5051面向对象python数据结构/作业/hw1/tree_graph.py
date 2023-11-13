@@ -92,11 +92,11 @@ class BST:
     def __init__(self, root = None):    # A BST can be declared via defining the root node
         self.root = root
 
-    ###########################################################################
-
     # input target value, return the first node object that has the same value if found. return None if not found.
-    def search(self, target_value, curr=self.root):
-
+    def search(self, target_value):
+        
+        curr=self.root
+        
         if (curr.data == target_value) or (curr is None):    # if the node is found, return this node, or
                                                                # if reaching a None node, return None
             return curr
@@ -144,7 +144,9 @@ class BST:
         else:
             return leftmost_descendent(node.left)
 
-    def delete(self, target_value, curr=self.root):
+    def delete(self, target_value):
+        
+        curr=self.root
 
         if curr is None:    # the case when no node contain the target value
             return None
@@ -379,7 +381,9 @@ class AVL_tree:
 
     ###########################################################################
     # Deletion via recursion
-    def delete(self, target_value, curr=self.root):
+    def delete(self, target_value):
+        
+        curr=self.root
 
         ###########################################################################
         # These are the same as delete in ordinary BST
