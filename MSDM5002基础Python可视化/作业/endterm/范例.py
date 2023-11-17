@@ -45,7 +45,7 @@ class MCTS(object):
     AI player, use Monte Carlo Tree Search with UCB
     """
  
-    def __init__(self, board, play_turn, n_in_row=5, time=5, max_actions=1000):
+    def __init__(self, board, play_turn, n_in_row=5, time=5, max_actions=3000):
  
         self.board = board
         self.play_turn = play_turn # ≥ˆ ÷À≥–Ú
