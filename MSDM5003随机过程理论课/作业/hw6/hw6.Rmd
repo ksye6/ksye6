@@ -39,7 +39,9 @@ plt.show()
 # for tau in range(lag, 2*lag + 1):
 #     print(res[0][tau],res[1][tau])
 
-
+```
+2.
+```{python}
 #2
 from numpy.fft import fft
 from sklearn.linear_model import LinearRegression
@@ -68,6 +70,9 @@ beta = -regression_model.coef_[0]
 
 print("Exponent β:", beta)
 
+```
+3.
+```{python}
 
 #3
 
