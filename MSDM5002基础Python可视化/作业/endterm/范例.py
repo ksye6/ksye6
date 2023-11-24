@@ -10,6 +10,7 @@ class Board(object):
         self.last_change = {"last":-1}
         self.last_last_change = {"last_last":-1}
         self.n_in_row = n_in_row # 表示几个相同的棋子连成一线算作胜利
+        self.steps = 0
  
     def init_board(self):
         self.availables = list(range(self.width * self.height)) # 表示棋盘上所有合法的位置，这里简单的认为空的位置即合法
@@ -37,6 +38,7 @@ class Board(object):
         self.availables.remove(move)
         self.last_last_change["last_last"] = self.last_change["last"]
         self.last_change["last"] = move
+        self.steps += 1
 
 import random
 
@@ -170,7 +172,7 @@ class MCTS(object):
  
     def select_one_move(self, board):
         
-        if self.skip:
+        if self.skip and board.steps >3:
             percent_wins, move = max(
                 (self.wins.get((self.player, move), 0) /
                 self.plays.get((self.player, move), 1),

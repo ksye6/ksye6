@@ -202,7 +202,7 @@ def main_template(player_is_black=True):
 
 
 if __name__ == '__main__':
-    main_template(False)
+    main_template(True)
 
 
 

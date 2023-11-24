@@ -68,43 +68,47 @@ class TreeNode(object):
         # self.num_of_win = 0                     # 胜利次数M 需要实时更新
         self.num_of_wins = defaultdict(int)  # 记录该结点模拟的白子、黑子的胜利次数(defaultdict: 当字典里的key不存在但被查找时，返回0)
 
-    def fully_expanded(self,availables):
+    def fully_expanded(self):
         """
         :return: True: 该结点已经完全扩展, False: 该结点未完全扩展
         """
         if self.not_visit_pos is None:  # 如果未访问过的结点为None(初始化为None)则未进行扩展过
-            self.not_visit_pos = set(availables) - set([ele.pre_pos for ele in self.children]) # 得到可作为该结点扩展结点的所有下标
+            self.not_visit_pos = set(self.board.availables) #- set([ele.pre_pos for ele in self.children]) # 得到可作为该结点扩展结点的所有下标
+
 
         return True if (len(self.not_visit_pos) == 0 and len(self.children) != 0) else False
 
-    # def pick_univisted(self):
-    #     """选择一个未访问的结点"""
-    #     random_index = randint(0, len(self.not_visit_pos) - 1)  # 随机选择一个未访问的结点（random.randint: 闭区间）
-    #     # print(len(self.not_visit_pos))
-    #     move_pos = self.not_visit_pos.pop(random_index)  # 得到一个随机的未访问结点, 并从所有的未访问结点中删除
-    #     # print(len(self.not_visit_pos))
-    #
-    #     new_board = self.board.move(move_pos)  # 模拟落子并返回新棋盘
-    #     new_node = TreeNode(parent=self, pre_pos=move_pos, board=new_board)  # 新棋盘绑定新结点
-    #     self.children.append(new_node)
-    #     return new_node
-    #
-    # def pick_random(self):
-    #     """选择结点的孩子进行扩展"""
-    #     possible_moves = self.board.get_legal_pos()  # 可以落子的点位
-    #     random_index = randint(0, len(possible_moves) - 1)  # 随机选择一个可以落子的点位（random.randint: 闭区间）
-    #     move_pos = possible_moves[random_index]  # 得到一个随机的可以落子的点位
-    #
-    #     new_board = self.board.move(move_pos)  # 模拟落子并返回新棋盘
-    #     new_node = TreeNode(parent=self, pre_pos=move_pos, board=new_board)  # 新棋盘绑定新结点
-    #     return new_node
+    def pick_univisted(self, player):
+        """选择一个未访问的结点"""
+        # print(len(self.not_visit_pos))
+        random_index = np.random.randint(0, len(self.not_visit_pos))  # 随机选择一个未访问的结点（random.randint: 闭区间）
 
-    # def non_terminal(self):
-    #     """
-    #     :return: None: 不是叶子(终端)结点, 'win' or 'tie': 是叶子(终端)结点
-    #     """
-    #     game_result = self.board.game_over(self.pre_pos)
-    #     return game_result
+        move_pos = list(self.not_visit_pos)[random_index]  # 得到一个随机的未访问结点, 并从所有的未访问结点中删除
+        self.not_visit_pos.remove(move_pos)
+
+        # self.board.update(player, move_pos)
+        new_board = copy.deepcopy(self.board)  # 模拟落子并返回新棋盘
+        new_board.update(player, move_pos)
+
+        new_node = TreeNode(parent=self, pre_pos=move_pos, board=new_board)  # 新棋盘绑定新结点
+        self.children.append(new_node)
+        return new_node
+
+    def pick_random(self,player):
+        """选择结点的孩子进行扩展"""
+        possible_moves = self.board.availables  # 可以落子的点位
+
+        random_index = np.random.randint(0, len(possible_moves) - 1)  # 随机选择一个可以落子的点位（random.randint: 闭区间test）
+        move_pos = possible_moves[random_index]  # 得到一个随机的可以落子的点位
+
+        # self.board.update(player, move_pos)
+        new_board = copy.deepcopy(self.board)  # 模拟落子并返回新棋盘
+        new_board.update(player, move_pos)
+
+
+        new_node = TreeNode(parent=self, pre_pos=move_pos, board=new_board)  # 新棋盘绑定新结点
+        return new_node
+
 
     def num_of_win(self, playturn):
         # print('playturn:',playturn)
@@ -125,6 +129,10 @@ class TreeNode(object):
         # best_index = np.random.choice(best_index[0])        # 随机选取一个拥有最大uct的孩子
         return self.children[best_index]
 
+    def __str__(self):
+        return "pre_pos: {}\t pre_player: {}\t num_of_visit: {}\t num_of_wins: {}" \
+            .format(self.pre_pos, self.board.last_change,
+                    self.num_of_visit, dict(self.num_of_wins))
 class MCTS(object):
     """
     AI player, use Monte Carlo Tree Search with UCB
@@ -140,142 +148,171 @@ class MCTS(object):
 
         self.player = play_turn[0]  # 轮到电脑出手，所以出手顺序中第一个总是电脑
         self.confident = 1.96  # UCB中的常数 1.96
-        # self.plays = {}  # 记录着法参与模拟的次数，键形如(player, move)，即（玩家，落子）
-        # self.wins = {}  # 记录着法获胜的次数
-
 
         self.max_depth = 1
         self.nodenum = 0
         self.skip = False
 
+    def fully_expanded(self, node):
+        """
+        :return: True: 该结点已经完全扩展, False: 该结点未完全扩展
+        """
+        if node.not_visit_pos is None:
+            # node.not_visit_pos = set(node.board.availables)
+            node.not_visit_pos = self.adjacent2(node.board)+self.adjacent3(node.board)
+        return True if (len(node.not_visit_pos) == 0 and len(node.children) != 0) else False
+
+    def traverse(self, node, play_turn):
+        """
+        层次遍历该结点及其子结点，遇到叶子结点，遇到未完全扩展的结点则对其进行扩展
+        """
+        player = self.get_player(play_turn)  # 获取当前出手的玩家
+        while node.fully_expanded():  # 该结点已经完全扩展, 选择一个UCT最高的孩子
+            node = node.best_uct(player)
+            player = self.get_player(play_turn)
+        # 遇到未完成扩展的结点后退出循环，先检查是否为叶子结点
+        if self.check_winner(node.board) != 0:  # 是叶子结点(node is terminal)
+            return node
+        else:  # 不是叶子结点且还没有孩子(in case no children are present)
+            # self.nodenum += 1
+            return self.expand_policy(node, player)
+            # return node.pick_univisted(player)
+
+    def expand_policy(self, node, player):
+        plays = [ele.pre_pos for ele in node.children]
+        # plays = set(node.board.availables) - set(node.not_visit_pos)
+        adjacents = self.adjacent_moves(node.board, player, plays)
+        # adjacents = list(set(adjacents) - set(plays))
+        if len(adjacents):
+            move = random.choice(adjacents)
+        else:
+            peripherals = []
+            for move in node.board.availables:
+                if move not in plays:
+                    peripherals.append(move)  # 没有统计信息的外围位置
+            move = random.choice(peripherals)
+        # print('plays:',plays,'move:',move, 'adj:',adjacents)
+
+        node.not_visit_pos.remove(move)
+        new_board = copy.deepcopy(node.board)  # 模拟落子并返回新棋盘
+        new_board.update(player, move)
+
+        new_node = TreeNode(parent=node, pre_pos=move, board=new_board)
+        node.children.append(new_node)
+        return new_node
+
+    # def rollout(self, node, play_turn,depth=0):
+    #     player = self.get_player(play_turn)  # 获取当前出手的玩家
+    #     while True:
+    #         depth += 1
+    #         game_result = self.check_winner(node.board)
+    #         # print('depth:',depth,'game_result:',game_result,'player:',player)
+    #         if game_result == 0:  # 不是叶子结点, 继续模拟
+    #             node = self.rollout_policy(node, player)
+    #         else:  # 是叶子结点，结束
+    #             break
+    #         player = self.get_player(play_turn)
+    #     self.max_depth = max(depth, self.max_depth)
+    #     return self.check_winner(node.board)
+    def rollout(self, node, play_turn,depth=0):
+        player = self.get_player(play_turn)  # 获取当前出手的玩家
+        board = copy.deepcopy(node.board)
+        while True:
+            depth += 1
+            game_result = self.check_winner(board)
+            # print('depth:',depth,'game_result:',game_result,'player:',player)
+            if game_result == 0:  # 不是叶子结点, 继续模拟
+                board = self.rollout_policy(board, player)
+            else:  # 是叶子结点，结束
+                break
+            player = self.get_player(play_turn)
+        self.max_depth = max(depth, self.max_depth)
+        return self.check_winner(board)
+    def rollout_policy(self, board, player):
+        plays = []
+        adjacents = self.adjacent_moves(board, player, plays)
+        if len(adjacents):
+            move = random.choice(adjacents)
+        else:
+            peripherals = []
+            for move in board.availables:
+                if move not in plays:
+                    peripherals.append(move)  # 没有统计信息的外围位置
+            move = random.choice(peripherals)
+
+        board.update(player, move)
+
+        return board
+
+    # def rollout_policy(self, node, player):
+    #     plays = []
+    #     adjacents = self.adjacent_moves(node.board, player, plays)
+    #     if len(adjacents):
+    #         move = random.choice(adjacents)
+    #     else:
+    #         peripherals = []
+    #         for move in node.board.availables:
+    #             if move not in plays:
+    #                 peripherals.append(move)  # 没有统计信息的外围位置
+    #         move = random.choice(peripherals)
+    #
+    #     new_board = copy.deepcopy(node.board)  # 模拟落子并返回新棋盘
+    #     new_board.update(player, move)
+    #
+    #     new_node = TreeNode(parent=node, pre_pos=move, board=new_board)
+    #     return new_node
+
+    def backpropagate(self, node, result):
+        node.num_of_visit += 1
+        node.num_of_wins[result] += 1
+        if node.parent:  # 如果不是根结点，则继续更新其父节点
+            self.backpropagate(node.parent, result)
+
+    def best_child(self, node):
+        visit_num_of_children = np.array(list([child.num_of_visit for child in node.children]))
+        best_index = np.argmax(visit_num_of_children)  # 获取最大uct的下标
+        node = node.children[best_index]
+        # print('root_child_node_info: ', node.num_of_visit, node.num_of_wins)
+        return node
+    def monte_carlo_tree_search(self, board_ori, pre_pos, simulations):
+        board = copy.deepcopy(board_ori)
+        root = TreeNode(board=board, pre_pos=pre_pos)  # 根结点，根结点无父亲
+        # for i in range(700):  # 相当于(while resources_left(time, computational power):)即资源限制
+        begin = time.time()
+        while time.time() - begin < self.calculation_time:
+            self.max_depth = 1
+            play_turn_copy = copy.deepcopy(self.play_turn)  # 每次模拟都必须按照固定的顺序进行，所以进行深拷贝防止顺序被修改
+            leaf = self.traverse(root, play_turn_copy)  # 选择和扩展，leaf = unvisited node（遍历根结点）
+            simulation_result = self.rollout(leaf, play_turn_copy)  # 模拟
+            self.backpropagate(leaf, simulation_result)  # 反向传播
+            simulations += 1
+        print('simulations/node number:',simulations)
+        return root
+        # return self.best_child(root).pre_pos
     def get_action(self):  # return move
 
         if len(self.board.availables) == 1:
             return self.board.availables[0]  # 棋盘只剩最后一个落子位置，直接返回
 
-        # 每次计算下一步时都要清空plays和wins表，因为经过AI和玩家的2步棋之后，整个棋盘的局面发生了变化，原来的记录已经不适用了——原先普通的一步现在可能是致胜的一步，如果不清空，会影响现在的结果，导致这一步可能没那么“致胜”了
-        # self.plays = {}
-        # self.wins = {}
-
-        root = TreeNode() # 初始化根结点, 每次计算下一步都要重新初始化根结点
-        self.nodenum = 0
+        # self.nodenum = 0
+        self.max_depth = 1
         self.skip = False
         simulations = 0
-        begin = time.time()
-        while time.time() - begin < self.calculation_time:
-            board_copy = copy.deepcopy(self.board)  # 模拟会修改board的参数，所以必须进行深拷贝，与原board进行隔离
-            play_turn_copy = copy.deepcopy(self.play_turn)  # 每次模拟都必须按照固定的顺序进行，所以进行深拷贝防止顺序被修改
-            self.run_simulation(board_copy, play_turn_copy,root)  # 进行MCTS
-            simulations += 1
-            # print('simulations:',simulations,'temp:',temp)
-
-
-        print("total simulations=", simulations)
+        root = self.monte_carlo_tree_search(self.board, self.board.last_change["last"], simulations)
 
         self.skip = self.skipf(self.board)
+        # print('skip:',self.skip)
+        # print('board:',self.board.availables)
         move, percent_wins = self.select_one_move(self.board,root)  # 选择最佳着法
-
+        #
         location = self.board.move_to_location(move)
         print('Maximum depth searched:', self.max_depth)
-        print('Maximum node number:', self.nodenum)
+        # print('Maximum node number:', self.nodenum)
 
         print("AI move: %d,%d\n" % (location[0], location[1]))
         print('AI move percent_wins: %f\n' % (percent_wins))
 
         return move
-
-
-    def run_simulation(self, board, play_turn,root):
-        """
-        MCTS main process
-        """
-
-        # plays = self.plays
-        # wins = self.wins
-
-        node = root
-        # visited = copy.deepcopy(root)
-
-        # availables = board.availables
-
-        player = self.get_player(play_turn)  # 获取当前出手的玩家
-        # visited_states = set()  # 记录当前路径上的全部着法
-        winner = 0
-        expand = True
-
-        # Simulation
-        for t in range(1, self.max_actions + 1):
-            # Selection
-            # 如果所有着法都有统计信息，则获取UCB最大的着法
-            availables = board.availables
-
-            # if node.fully_expanded(availables):
-            if len(set(availables) - set([ele.pre_pos for ele in node.children])) == 0:
-                node = node.best_uct(player)
-                # visited = visited.best_uct()
-                move = node.pre_pos
-                # print('move:',move)
-
-            else:
-                if expand:
-                    plays = [ele.pre_pos for ele in node.children]
-                else:
-                    plays = []
-                adjacents = []
-                if len(availables) > self.n_in_row:
-                    adjacents = self.adjacent_moves(board, player, plays)  # 没有统计信息的邻近位置
-
-                if len(adjacents):
-                    move = random.choice(adjacents)
-                else:
-                    peripherals = []
-                    for move in availables:
-                        if move not in plays:
-                            peripherals.append(move)  # 没有统计信息的外围位置
-                    move = random.choice(peripherals)
-
-            board.update(player, move)
-
-            # visited_new = TreeNode(parent=visited, pre_pos=move, board=board)
-            # visited.children.append(visited_new)
-            # visited = visited_new
-
-            # Expand
-            # 每次模拟最多扩展一次，每次扩展只增加一个着法
-            if expand and move not in [ele.pre_pos for ele in node.children]:
-                expand = False
-                newnode = TreeNode(parent=node, pre_pos=move, board=board)
-                node.children.append(newnode)
-                node = newnode
-                self.nodenum += 1
-                if t > self.max_depth:
-                    self.max_depth = t
-
-            # visited_states.add((player, move))
-
-            is_full = not len(availables)
-            win = self.check_winner(board) != 0
-
-            winner = 0
-            if win:
-                winner = self.check_winner(board)
-
-            if is_full or win:  # 游戏结束，没有落子位置或有玩家获胜
-                break
-
-            player = self.get_player(play_turn)
-
-        #bp
-        # temp = node.pre_pos
-        node.num_of_visit += 1
-        node.num_of_wins[winner] += 1
-        while node.parent:
-            node = node.parent
-            node.num_of_visit += 1
-            node.num_of_wins[winner] += 1
-        # return temp
-
-
     def get_player(self, players):
         p = players.pop(0)
         players.append(p)
@@ -287,13 +324,19 @@ class MCTS(object):
             visit_num_of_children = np.array(list([child.num_of_visit for child in node.children]))
             pre_pos_of_children = np.array(list([child.pre_pos for child in node.children]))
             idx = np.where(np.isin(pre_pos_of_children, limited))
-            visit_num_of_children = visit_num_of_children[idx]
 
-            best_index = np.argmax(visit_num_of_children)  # 获取最大ucb的下标
+            visit_num_of_children = visit_num_of_children[idx]
+            win_num_of_children = np.array(list([child.num_of_win(self.play_turn[0]) for child in node.children]))[idx]
+            percent_wins = win_num_of_children / visit_num_of_children
+            ucbs = percent_wins + self.confident * np.sqrt(np.log(node.num_of_visit) / visit_num_of_children)
+
+            best_index = np.argmax(ucbs)  # 获取最大ucb的下标
             node = np.array(node.children)[idx][best_index]
         else:
-            limited = np.array(self.adjacent2(board)+self.adjacent3(board))
-            # print('lim:',limited)
+            if len(board.availables) >= 119:
+                limited = np.array(self.adjacent2(board))
+            else:
+                limited = np.array(self.adjacent2(board)+self.adjacent3(board))
 
             visit_num_of_children = np.array(list([child.num_of_visit for child in node.children]))
             pre_pos_of_children = np.array(list([child.pre_pos for child in node.children]))
@@ -304,18 +347,26 @@ class MCTS(object):
             idx = np.where(np.isin(pre_pos_of_children, limited))
             visit_num_of_children = visit_num_of_children[idx]
 
-            best_index = np.argmax(visit_num_of_children)  # 获取最大ucb的下标
+            win_num_of_children = np.array(list([child.num_of_win(self.play_turn[0]) for child in node.children]))[idx]
+            percent_wins = win_num_of_children / visit_num_of_children
+            ucbs = percent_wins + self.confident * np.sqrt(np.log(node.num_of_visit) / visit_num_of_children)
+
+            best_index = np.argmax(ucbs)  # 获取最大ucb的下标
             # print('idx:',idx,best_index)
             # print('node:',len(np.array(node.children)))
             node = np.array(node.children)[idx][best_index]
-        # print('win:',node.num_of_win(self.play_turn[0]),'visit:',node.num_of_visit)
+
+        print('win:',node.num_of_win(self.play_turn[0]),'visit:',node.num_of_visit, 'ucb:',ucbs)
         return node.pre_pos, node.num_of_win(self.play_turn[0]) / node.num_of_visit
 
     def check_winner(self, board):
         """
         检查是否有玩家获胜
         """
+        # print('board:',board.states[0])
+        # print(np.array([board.states[key][0] for key in range(121)])[:10])
         array_2d = np.array([board.states[key] for key in range(121)]).reshape(11, 11)
+        # print(array_2d)
 
         array11 = np.concatenate((array_2d[-4:, -4:], array_2d[-4:, :], array_2d[-4:, :4]), axis=1)
         array12 = np.concatenate((array_2d[:, -4:], array_2d, array_2d[:, :4]), axis=1)
@@ -439,9 +490,10 @@ class MCTS(object):
                 adjacents.add(m - width - 1 + width + height * width)  # 左上到右下
 
         adjacents = list(set(adjacents) - set(moved))
-        for move in adjacents:
-            if move in plays:
-                adjacents.remove(move)
+        adjacents = list(set(adjacents) - set(plays))
+        # for move in adjacents:
+        #     if move in plays:
+        #         adjacents.remove(move)
         return adjacents
 
     def checkp4(self, board):
@@ -459,6 +511,9 @@ class MCTS(object):
         n = board.height
 
         tent = board.last_change["last"]
+        if tent == -1:
+            return []
+
         i = board.move_to_location(tent)[0]
         j = board.move_to_location(tent)[1]
 
@@ -550,8 +605,13 @@ class MCTS(object):
         n = board.height
 
         tent = board.last_last_change["last_last"]
+        if tent == -1:
+            return []
+
         i = board.move_to_location(tent)[0]
         j = board.move_to_location(tent)[1]
+
+        # print('tent:', tent, 'i:', i, 'j:', j)
 
         player = array_2d[i][j]
 
@@ -641,6 +701,8 @@ class MCTS(object):
         n = board.height
 
         tent = board.last_change["last"]
+        if tent == -1:
+            return []
         i = board.move_to_location(tent)[0]
         j = board.move_to_location(tent)[1]
 
@@ -748,6 +810,8 @@ class MCTS(object):
         n = board.height
 
         tent = board.last_last_change["last_last"]
+        if tent == -1:
+            return []
         i = board.move_to_location(tent)[0]
         j = board.move_to_location(tent)[1]
 
@@ -1132,8 +1196,8 @@ def main_template(player_is_black=True):
     col=None
     
     colorai = -1 if player_is_black else 1
-    # play_turn=[colorai,-colorai]
-    play_turn = [1,-1]
+    play_turn=[colorai,-colorai]
+    # play_turn = [1,-1]
     
     AI=MCTS(board,play_turn)
     
