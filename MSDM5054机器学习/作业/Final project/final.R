@@ -120,10 +120,36 @@
 # Autoencoders can also be used on complex, large data sets.
 
 #9
+# Bias: As the number of layers of a neural network increases, the complexity of the model increases and it usually fits 
+# the training data better, so the bias gradually decreases. Deeper networks can learn more complex features and patterns, 
+# thereby increasing the flexibility and expressiveness of the model.
+
+# Variance: When the number of layers of a neural network increases, the complexity of the model also increases, which may 
+# lead to overfitting to the training data. Overfitting means that the model adapts too well to the details and noise of the 
+# training data, resulting in reduced generalization ability on new unseen data. Therefore, the variance may increase.
 
 #10
 
+# Input: training set D ={(x_n,y_m, verification set V, learning rate α, regularization coefficient λ, number of network layers L, 
+#        number of neurons M_l,1<=l<=L
 
+# Randomly initialize W,b;
+# Repeat:
+#       Randomly reorder the samples in the training set D;
+#       for n = 1...N do:
+#             Select samples (x_n,y_n) from the training set D;
+#             Feedforward calculates the net input z_l and activation value a_l of each layer until the last layer;
+#             Back propagation calculates the error δ_l of each layer;
+#             Calculate the derivative of each layer parameter;
+#             # Any l, dL(y_n,y^_n)/dW_l = δ_l·(a_(l-1))^T;
+#             # Any l, dL(y_n,y^_n)/db_l = δ_l;
+#             Update parameters;
+#             # W_l ← W_l - α(δ_l·(a_(l-1))^T + λW_l);
+#             # b_l ← b_l - α(δ_l);
+#       end;
+# Until the error rate of the neural network model on the validation set V no longer decreases.
+
+# Output W,b
 
 
 #(2)
@@ -292,17 +318,20 @@ qda_model$results
 #6
 library(e1071)
 
+tune_ctrl=tune.control(sampling = "cross", cross = 5)
+
 set.seed(1)
-tune.out=tune(svm, grouptype~.,data=df,kernel="linear",scale=TRUE,ranges=list(cost=c(1,5,10,15,20,25,30)),cross = 5)
+tune.out=tune(svm, grouptype~.,data=df,kernel="linear",scale=TRUE,ranges=list(cost=c(1,5,10,15,20,25,30)),tunecontrol=tune_ctrl)
 tune.out$performances
 tune.out$best.performance
+tune.out$best.model
 
-# Accuracy: 0.8090754
-# Misclassification Error = 0.1909246
+# Accuracy: 0.8088906
+# Misclassification Error = 0.1911094
 
 
 # set.seed(1)
-# tune.out=tune(svm, grouptype~.,data=df, kernel="radial",ranges=list(cost=c(0.1,1,10,100),gamma=c(0.5,1,2,3,4)),cross = 5)
+# tune.out=tune(svm, grouptype~.,data=df, kernel="radial",ranges=list(cost=c(0.1,1,10,100),gamma=c(0.5,1,2,3,4)),tunecontrol=tune_ctrl)
 # summary(tune.out)
 
 
@@ -314,7 +343,7 @@ tune.out$best.performance
 #       GBM        0.8228666     Large
 #       LDA        0.7974388     Small
 #       QDA        0.7710264     Small
-#       SVM        0.8090754     Large
+#       SVM        0.8088906     Large
 
 # The GBM has the best accuracy, however it needs the most time to train the model. Random Forest is better.
 # The SVM also takes lots of time while its performance is not so good as Random Forest.
@@ -324,15 +353,139 @@ write.csv(df, file = "C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习
 
 
 #(4)
+#1
+test=read.csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\MNIST\\test_resized.csv")
+train=read.csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\MNIST\\train_resized.csv")
+
+# train[, 2:ncol(train)][train[, 2:ncol(train)] != 0]= 1
+# test[, 2:ncol(test)][test[, 2:ncol(test)] != 0]= 1
+
+train_36=train[train$label==3 | train$label==6,]
+test_36=test[test$label==3 | test$label==6,]
+
+train_36$label=as.factor(train_36$label)
+test_36$label=as.factor(test_36$label)
+
+library(e1071)
+library(caret)
+
+start_time=Sys.time()  # start time
+
+tune_ctrl=tune.control(sampling = "cross", cross = 5)
+
+set.seed(123)
+tune.out=tune(svm, label~.,data=train_36,kernel="linear",scale=TRUE,ranges=list(cost=c(0.01,0.02,0.05,0.1,0.5,1,3,10)),tunecontrol=tune_ctrl)
+
+end_time=Sys.time()    # end time
+execution_time = end_time-start_time
+execution_time
+
+tune.out$performances
+tune.out$best.performance
+tune.out$best.model
+
+# choose cost = 0.02
+
+svmfit1=svm(label~., data=train_36, kernel="linear", cost=0.02 , scale=TRUE)
+### prediction
+ypred1=predict(svmfit1,test_36)
+table(predict=ypred1, truth=test_36$label)  # confusion matrix
+sum(ypred1==test_36$label)/nrow(test_36)   # accuracy
+1-sum(ypred1==test_36$label)/nrow(test_36)  # the mis-classification error
 
 
 
+#2
+start_time=Sys.time()  # start time
+
+tune_ctrl=tune.control(sampling = "cross", cross = 5)
+
+set.seed(123)
+tune.out=tune(svm, label~.,data=train_36,kernel="radial",scale=TRUE,ranges=list(cost=c(0.5,1,4,9),gamma=c(0.001,0.01,0.1,0.5)),tunecontrol=tune_ctrl)
+
+end_time=Sys.time()    # end time
+execution_time = end_time-start_time
+execution_time
+
+tune.out$performances
+tune.out$best.performance
+tune.out$best.model
+
+# choose cost = 4, gamma = 0.001
+
+svmfit2=svm(label~., data=train_36, kernel="radial", gamma=0.001, cost = 4, scale=TRUE)
+### prediction
+ypred2=predict(svmfit2,test_36)
+table(predict=ypred2, truth=test_36$label)  # confusion matrix
+sum(ypred2==test_36$label)/nrow(test_36)   # accuracy
+1-sum(ypred2==test_36$label)/nrow(test_36)  # the mis-classification error
 
 
+#3
+# The method of radial kernel with the best parameters is a bit preciser than linear kernel. (99.51% > 99.39%)
+# While the training time is much much longer than that of linear kernel.
+
+#4
+
+train_1258=train[train$label==1 | train$label==2 | train$label==5 | train$label==8,]
+test_1258=test[test$label==1 | test$label==2 | test$label==5 | test$label==8,]
+
+train_1258$label=as.factor(train_1258$label)
+test_1258$label=as.factor(test_1258$label)
+
+start_time=Sys.time()  # start time
+
+tune_ctrl=tune.control(sampling = "cross", cross = 5)
+
+set.seed(123)
+tune.out=tune(svm, label~.,data=train_1258,kernel="linear",scale=TRUE,ranges=list(cost=c(0.02,0.05,0.1,0.5,1,3,8)),tunecontrol=tune_ctrl)
+
+end_time=Sys.time()    # end time
+execution_time = end_time-start_time
+execution_time
+
+tune.out$performances
+tune.out$best.performance
+tune.out$best.model
+
+# choose cost = 0.05
+
+svmfit3=svm(label~., data=train_1258, kernel="linear", cost=0.05 , scale=TRUE)
+### prediction
+ypred3=predict(svmfit3,test_1258)
+table(predict=ypred3, truth=test_1258$label)  # confusion matrix
+sum(ypred3==test_1258$label)/nrow(test_1258)   # accuracy
+1-sum(ypred3==test_1258$label)/nrow(test_1258)  # the mis-classification error
 
 
+#5
 
+train$label=as.factor(train$label)
+test$label=as.factor(test$label)
 
+start_time=Sys.time()  # start time
+
+tune_ctrl=tune.control(sampling = "cross", cross = 5)
+
+set.seed(123)
+tune.out=tune(svm, label~.,data=train,kernel="linear",scale=TRUE,ranges=list(cost=c(0.02,0.05,0.1,0.5,2,8)),tunecontrol=tune_ctrl)
+
+end_time=Sys.time()    # end time
+execution_time = end_time-start_time
+execution_time
+
+tune.out$performances
+tune.out$best.performance
+tune.out$best.model
+
+# choose cost = 0.05
+
+svmfit4=svm(label~., data=train, kernel="linear", cost=0.05 , scale=TRUE)
+### prediction
+ypred4=predict(svmfit4,test)
+table(predict=ypred4, truth=test$label)  # confusion matrix
+sum(ypred4==test$label)/nrow(test)   # accuracy
+1-sum(ypred4==test$label)/nrow(test)  # the mis-classification error
 
 
 

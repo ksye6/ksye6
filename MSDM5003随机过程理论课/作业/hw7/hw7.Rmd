@@ -86,31 +86,31 @@ plt.show()
 ```{python}
 
 #c
-wlist = np.arange(2, 10, 0.05)
-factorx = []
-
-for w in wlist:
-
-    index_w = np.abs(sorted_wealth - w).argmin()
-    index_2w = np.abs(sorted_wealth - 2*w).argmin()
-    
-    ccdf_w = ccdf[index_w]
-    ccdf_2w = ccdf[index_2w]
-    
-    x = (ccdf_w - ccdf_2w) / ccdf_w
-    
-    factorx.append(x)
-
-
-fig = plt.figure()
-
-factor = plt.plot(wlist, factorx)
-
-plt.title('Reduce Factor x for wealthier people')
-plt.xlabel('w')
-plt.ylabel('x')
-
-plt.show()
+# wlist = np.arange(2, 10, 0.05)
+# factorx = []
+# 
+# for w in wlist:
+# 
+#     index_w = np.abs(sorted_wealth - w).argmin()
+#     index_2w = np.abs(sorted_wealth - 2*w).argmin()
+#     
+#     ccdf_w = ccdf[index_w]
+#     ccdf_2w = ccdf[index_2w]
+#     
+#     x = (ccdf_w - ccdf_2w) / ccdf_w
+#     
+#     factorx.append(x)
+# 
+# 
+# fig = plt.figure()
+# 
+# factor = plt.plot(wlist, factorx)
+# 
+# plt.title('Reduce Factor x for wealthier people')
+# plt.xlabel('w')
+# plt.ylabel('x')
+# 
+# plt.show()
 
 # From the fit formulation: y = exp(-1.0905) * x^(-1.44044238), x should be around 1-2**(-1.0905) = 0.53 (the reduced number is 0.53*n)
 
@@ -165,31 +165,31 @@ plt.show()
 ```{python}
 #e
 
-wlist2 = np.arange(0.02, 0.6, 0.02)
-numbery = []
-
-for w in wlist2:
-
-    index_w = np.abs(sorted_wealth2 - w).argmin()
-    ccdf_w = ccdf2[index_w]
-    ccdf_2w = ccdf_w/2
-    
-    index_2w = np.abs(ccdf2 - ccdf_2w).argmin()
-    
-    y = (sorted_wealth2[index_2w] - w)
-    
-    numbery.append(y)
-
-
-fig = plt.figure()
-
-factor = plt.plot(wlist2, numbery,marker='o')
-
-plt.title('Increase number y for less wealthy agents')
-plt.xlabel('w')
-plt.ylabel('y')
-
-plt.show()
+# wlist2 = np.arange(0.02, 0.6, 0.02)
+# numbery = []
+# 
+# for w in wlist2:
+# 
+#     index_w = np.abs(sorted_wealth2 - w).argmin()
+#     ccdf_w = ccdf2[index_w]
+#     ccdf_2w = ccdf_w/2
+#     
+#     index_2w = np.abs(ccdf2 - ccdf_2w).argmin()
+#     
+#     y = (sorted_wealth2[index_2w] - w)
+#     
+#     numbery.append(y)
+# 
+# 
+# fig = plt.figure()
+# 
+# factor = plt.plot(wlist2, numbery,marker='o')
+# 
+# plt.title('Increase number y for less wealthy agents')
+# plt.xlabel('w')
+# plt.ylabel('y')
+# 
+# plt.show()
 
 # From the fit formulation: y = exp(-1.78963301*x + 0.08882959), y should be = np.log(0.5)/-1.78963301 = 0.387
 
