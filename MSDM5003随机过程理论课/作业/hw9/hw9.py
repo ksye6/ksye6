@@ -1,3 +1,5 @@
+# -*- coding: gbk -*-
+
 import numpy as np
 import pandas as pd
 import random
@@ -105,9 +107,9 @@ totaldf=pd.DataFrame(np.array(recordings))
 
 plt.figure(figsize=(16,12))
 
-plt.plot(totaldf.loc[:,np.argsort(real_wealth)[49]],linewidth=1.5,label='medium 49')
+plt.plot(totaldf.loc[:,np.argsort(real_wealth)[45]],linewidth=1.5,label='medium 45')
 plt.plot(totaldf.loc[:,np.argsort(real_wealth)[50]],linewidth=1.5,label='median 50')
-plt.plot(totaldf.loc[:,np.argsort(real_wealth)[51]],linewidth=1.5,label='median 51')
+plt.plot(totaldf.loc[:,np.argsort(real_wealth)[55]],linewidth=1.5,label='median 55')
 
 plt.plot(totaldf.loc[:,np.argsort(real_wealth)[-1]],linewidth=1.5,label='1st best')
 plt.plot(totaldf.loc[:,np.argsort(real_wealth)[-2]],linewidth=1.5,label='2nd best')
@@ -128,11 +130,11 @@ plt.show()
 
 #16
 sorted_wealth=real_wealth[np.argsort(real_wealth)]
-wealth=[sorted_wealth[i] for i in [-1,-2,-3,49,50,51,0,1,2]]
-gain=[sorted_wealth[i]/price[0]/5 for i in [-1,-2,-3,49,50,51,0,1,2]]
-stock=[price0[-1]*5] * 9
-compare=pd.DataFrame({'wealth':wealth,'gain':gain,'stock':stock},index=['best1','best2','best3','median1','median2','median3','worst1','worst2','worst3'])
-compare
+wealth=[sorted_wealth[i] for i in [-1,-2,-3,45,50,55,0,1,2]]
+gain=[sorted_wealth[i]/price[0]/5 for i in [-1,-2,-3,45,50,55,0,1,2]]
+stock=[price0[-1]*5]*9
+compare_data=pd.DataFrame({'wealth':wealth,'gain':gain,'stock':stock},index=['best1','best2','best3','median1','median2','median3','worst1','worst2','worst3'])
+compare_data
 
 
 #17

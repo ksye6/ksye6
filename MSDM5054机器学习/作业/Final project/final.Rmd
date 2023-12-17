@@ -1,0 +1,1034 @@
+---
+title: "Final"
+author: "20989977 Zhang Mingtao"
+date: "2023/12/8"
+output: html_document
+---  
+0.
+```{r}
+library(reticulate)
+```
+
+1.
+```{r}
+#1
+# Random Forest:
+#
+# The idea of random forest: On the basis of bagging (changing training samples), the diversity of the base learner is further enhanced
+# by changing the modeling variables. Specifically: for each node of the base decision tree, from the change of the node randomly 
+# select a subset containing k variables from the quantity set, and then select an optimal variable from this subset for branching.
+#
+# For each tree i = 1, · · · ,T: (1) Use the Bootstrap method to extract n sample observations from all training sample observations to 
+# form the Bootstrap data set D*; (2) Based on data set D* Construct a tree hi and repeat the following steps for each node in the tree
+# until the stopping rule is met; (3) Output a combination of T trees.
+#
+# The computational complexity of random forest is: T(O(nk log2(n)) + O(s) + O(n))
+# The computational complexity of the base decision tree is O(nk log2(n)); The complexity of Bootstrap sampling and voting/averaging 
+# is O(s); variables are randomly selected at the root node and intermediate nodes, with about n nodes, Therefore the complexity is O(n);
+# There are T base decision trees in total.
+
+# Gradient Boosting Trees:
+# 
+# Decision Tree (GBDT) is an additive model form: fm(x) = fm-1(x) + hm(x).
+# Consider the squared loss function, The hm(x) generated at step m should be in the direction of the local maximum decrease of L 
+# with respect to fm-1(x). In summary, at the mth step: hm(x) should be in the local direction described by the gradient
+# -gm = y - fm-1(x) up. hm(x) should be a decision tree with εm = y - fm-1(x) as the dependent variable.
+#
+# The computational complexity of the decision tree can be expressed as O(TNMlog(M)), where T is the number of iterations.
+
+#2
+# Decision trees have strong interpretability, while random forests are relatively weak in model interpretability.
+
+# Decision tree is a machine learning algorithm based on tree structure. Each node of the decision tree represents a feature 
+# attribute, the branches of the node represent the value of the feature attribute, and the leaf nodes represent the final 
+# classification or regression results. Due to the clear structure, we can directly observe the judgment conditions and branch 
+# paths of each node to understand how the model makes predictions.
+
+# Random forest is an ensemble learning method that consists of multiple decision trees. The final prediction result of 
+# a random forest is obtained by voting or averaged by all decision trees. Each decision tree may adopt different features 
+# and parameter settings, so the interpretability of the entire model becomes more difficult. In addition, random forest 
+# introduces randomness in the construction process, including random selection of features and random sampling of data, 
+# which also increases the difficulty of fully interpreting the model. Since the number of decision trees in a random forest 
+# is large and the contribution of each decision tree is relatively small, it is difficult to map the prediction results of 
+# the entire random forest to a single feature or decision.
+
+#3
+# Construct a Lagrangian function: Lagrange = L(Y, f) + λ(f1 + f2 + ... + fK), minimize Lagrange.
+# We take the partial derivatives of f1, f2, ..., fK and λ and set them equal to zero to get the following system of equations:
+# 
+# exp((-Y·f*)/K) · (-Y1/K) + λ = 0
+# exp((-Y·f*)/K) · (-Y2/K) + λ = 0
+# ...
+# exp((-Y·f*)/K) · (-YK/K) + λ = 0
+# f*1 + f*2 + ... + f*K = 0
+# 
+# We can use numerical optimization methods to approximate the solution, such as gradient descent.
+# The class probability can be expressed as P(Y = 1 | G = Gk) = P(G = Gk). Yk = 1 or Yk = -1/(K-1). therefore:
+# P(Y = 1 | G = Gk) = P(G = Gk) = (1 + 1/(K-1)) * P(Yk = 1)
+# P(Y = -1/(K-1) | G = Gk) = (1/(K-1)) * P(Yk = -1/(K-1))
+# By definition we have ∑P(Yk = 1) = 1, therefore ∑P(G = Gk) = 1.
+#
+# When we minimize the loss function L(Y, f), the value of the loss function increases for misclassified samples and decreases 
+# for correctly classified samples. This causes the weight of incorrectly classified samples to increase and the weight of 
+# correctly classified samples to decrease in the next iteration.
+# Similar to Adaboost, we can calculate the weighting factor for each sample based on the classification error. Specifically, 
+# for sample i, we define the weight factor as: wi = exp((-Yi·f)/K). This weight factor is consistent with the form of 
+# the loss function L(Y, f)
+
+#4
+# Suppose there is an optimal classification hyperplane whose distance to the left is greater than the distance to the right.
+# In this case, consider two projection points on the optimal classification hyperplane, which are located on the boundaries of the left and right intervals respectively. 
+# Let the projection point on the left be A and the projection point on the right be B.
+# Since the distance on the left side is the largest distance on the right side, we can move the projection point A on the optimal 
+# classification hyperplane along the direction of the normal arrangement, and at the same time move the projection point B to the 
+# right until they are both located on their respective boundaries, instead of changing Classification results of data points.
+# Doing this will cause the method of optimizing the classification hyperplane to change, but since we only made small adjustments, 
+# this new hyperplane will still be able to correctly classify the data points of both categories.
+# However, this contradicts the definition of a maximum margin classifier.
+
+#5
+# Contains three types of support vectors:
+# 1.Points lying on hyperplanes L+1 and L-1.  (0 < λi < C and ξi = 0 );
+# 
+# 2.Points that fall within the interval and are correctly classified.   (λi = C and 0 < ξi ≤ 1);
+# 
+# 3.Points that are not correctly classified.   (λi = C and ξi > 1).
+
+#6
+# From the perspective of loss function plus penalty: ξi can be expressed as: ξi = max(0,1-yi(β^T * xi + β0)). This is Hinge Loss.
+# Using hinge loss, the above objective can be rewritten as: min(β,β0){1∑n(1-yi(xi^T *β + β0)) + λ/2|β|^2))}
+
+#7
+# The fundamental difference between the two algorithms is that K-means is essentially unsupervised learning, 
+# while KNN is supervised learning; K-means is a clustering algorithm, and KNN is a classification (or regression) algorithm.
+# 
+# KNN belongs to supervised learning, and the categories are known. By training and learning the data of known categories, 
+# we can find the characteristics of these different categories, and then classify the unclassified data.
+# 
+# Kmeans belongs to unsupervised learning. It is not known in advance how many categories the data will be divided into, 
+# and the data is aggregated into several groups through cluster analysis. Clustering does not require training and learning from the data.
+
+#8
+# Principal components analysis is an unsupervised technique that projects raw data into several high vertical directions 
+# These high vertical directions are orthogonal, so the correlation of the projected data is very low or almost close to 0. 
+# These feature transformations are linear.
+
+# An autoencoder is an unsupervised artificial neural network that compresses data into lower dimensions and then reconstructs 
+# the input. Autoencoders find lower-dimensional representations of data by removing noise and redundancy on important features.
+
+# PCA can only perform linear transformations, while autoencoders can perform both linear and nonlinear transformations;
+
+# The PCA algorithm is fast to calculate, while the autoencoder needs to be trained through the gradient descent algorithm, 
+# so it takes longer time;
+
+# PCA projects the data into several orthogonal directions, while the data dimensions are not necessarily orthogonal 
+# after autoencoder dimensionality reduction;
+
+# The only hyperparameter of PCA is the number of orthogonal vectors, while the hyperparameters of the autoencoder are 
+# the structural parameters of the neural network;
+
+# Autoencoders can also be used on complex, large data sets.
+
+#9
+# Bias: As the number of layers of a neural network increases, the complexity of the model increases and it usually fits 
+# the training data better, so the bias gradually decreases. Deeper networks can learn more complex features and patterns, 
+# thereby increasing the flexibility and expressiveness of the model.
+
+# Variance: When the number of layers of a neural network increases, the complexity of the model also increases, which may 
+# lead to overfitting to the training data. Overfitting means that the model adapts too well to the details and noise of the 
+# training data, resulting in reduced generalization ability on new unseen data. Therefore, the variance may increase.
+
+#10
+
+# Input: training set D ={(x_n,y_m, verification set V, learning rate α, regularization coefficient λ, number of network layers L, 
+#        number of neurons M_l,1<=l<=L
+
+# Randomly initialize W,b;
+# Repeat:
+#       Randomly reorder the samples in the training set D;
+#       for n = 1...N do:
+#             Select samples (x_n,y_n) from the training set D;
+#             Feedforward calculates the net input z_l and activation value a_l of each layer until the last layer;
+#             Back propagation calculates the error δ_l of each layer;
+#             Calculate the derivative of each layer parameter;
+#             # Any l, dL(y_n,y^_n)/dW_l = δ_l·(a_(l-1))^T;
+#             # Any l, dL(y_n,y^_n)/db_l = δ_l;
+#             Update parameters;
+#             # W_l ← W_l - α(δ_l·(a_(l-1))^T + λW_l);
+#             # b_l ← b_l - α(δ_l);
+#       end;
+# Until the error rate of the neural network model on the validation set V no longer decreases.
+
+# Output W,b
+```  
+
+2.
+```{r}
+#(2)
+#1
+documents=read.table("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\20newsgroup\\documents.txt", header = FALSE)
+groupnames=read.table("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\20newsgroup\\groupnames.txt", header = FALSE)
+newsgroups=read.table("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\20newsgroup\\newsgroups.txt", header = FALSE)
+wordlist=read.table("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\20newsgroup\\wordlist.txt", header = FALSE)
+
+library(tidyr)
+library(gtools)
+
+tent=pivot_wider(documents, names_from = V2, values_from = V3, values_fill = 0)
+df=as.data.frame(tent)
+df=df[, -1]
+sorted_cols=mixedsort(colnames(df))
+df=df[,sorted_cols]
+
+colnames(df)=wordlist$V1
+
+newsgroups[newsgroups == 1]=groupnames[1,]
+newsgroups[newsgroups == 2]=groupnames[2,]
+newsgroups[newsgroups == 3]=groupnames[3,]
+newsgroups[newsgroups == 4]=groupnames[4,]
+
+df=as.data.frame(lapply(df, as.factor))
+
+df$grouptype=newsgroups$V1
+
+df$grouptype=as.factor(df$grouptype)
+
+library(randomForest)
+library(caret)
+
+train_control=trainControl(method = "cv",number = 5)
+param_grid=expand.grid(mtry = c(8, 10, 12))
+
+set.seed(123)
+rf_model1=train(x = df[,-101],y = df[,101], method = "rf", ntree = 150, trControl = train_control, tuneGrid = param_grid)
+rf_model1$results
+set.seed(123)
+rf_model2=train(x = df[,-101],y = df[,101], method = "rf", ntree = 100, trControl = train_control, tuneGrid = param_grid)
+rf_model2$results
+set.seed(123)
+rf_model3=train(x = df[,-101],y = df[,101], method = "rf", ntree = 200, trControl = train_control, tuneGrid = param_grid)
+rf_model3$results
+
+# We choose the ntree = 200 and mtry = 12 to get the lowest cv-error = 1 - 0.8148625 = 0.1851375
+
+set.seed(123)
+rf_model=randomForest(grouptype~., data = df, mtry=12, ntree=200, importance=T, proximity=T)
+rf_model
+
+# OOB estimate of  error rate: 18.65%
+# Confusion matrix:
+#          comp.* rec.* sci.* talk.* class.error
+# comp.*   4142    73   195    195   0.1005429
+# rec.*     300  2706   156    357   0.2310315
+# sci.*     642   131  1488    396   0.4399699
+# talk.*    258   126   200   4877   0.1069401
+
+sorted_MeanDecreaseAccuracy=rf_model$importance[order(rf_model$importance[,5], decreasing = TRUE), ]
+sorted_MeanDecreaseGini=rf_model$importance[order(rf_model$importance[,6], decreasing = TRUE), ]
+
+sorted_MeanDecreaseAccuracy[1:10,]  # the same ↓
+sorted_MeanDecreaseGini[1:10,]      # the same ↑
+
+# So the ten most important keywords based on variable importance are:
+# windows, god, christian, car, government, team, jews, graphics, space, religion.
+
+
+
+
+#2
+train_control2=trainControl(method = "cv", number = 5)
+param_grid2=expand.grid(n.trees = c(100, 150, 200),interaction.depth = c(1,2,3),shrinkage = c(0.01,0.05,0.1),n.minobsinnode = c(15))
+
+set.seed(123)
+gbm_model=train(x = df[, -101],y = df[, 101],method = "gbm",trControl = train_control2,tuneGrid = param_grid2,verbose = FALSE)
+
+gbm_model$results
+gbm_model
+
+# The final values used for the model were n.trees = 200, interaction.depth = 3, shrinkage = 0.1 and n.minobsinnode = 15.
+
+library(gbm)
+set.seed(123)
+gbm_model2=gbm(grouptype~., data = df, distribution = "multinomial",n.trees=200, interaction.depth=3, shrinkage = 0.1)
+summary(gbm_model2)
+
+# So the ten most important keywords based on variable importance are:
+# windows, god, christian, car, government, team, jews, graphics, space, gun (not religion).
+
+predicted_classes=predict(gbm_model2, newdata = df, type = "response")
+predicted_classes=colnames(predicted_classes)[apply(predicted_classes, 1, which.max)]
+
+confusion_matrix=table(predicted_classes, df$grouptype)
+confusion_matrix
+
+# 计算错误率
+error_rate=1 - sum(diag(confusion_matrix)) / sum(confusion_matrix)
+print(paste("Error rate:", error_rate))
+
+# predicted_classes  comp.* rec.* sci.* talk.*
+#           comp.*   4142   275   553    231
+#           rec.*      62  2739   117    111
+#           sci.*     217   160  1622    257
+#           talk.*    184   345   365   4862
+#
+#            Error rate: 0.177133357960842
+
+
+#3
+#  Time : the gbm(Error rate: 0.177) is much slower and a bit more accurate than random forest(Error rate: 0.1851375).
+#  Variable importance: the first 9 keywords are the same.
+
+#4
+library(MASS)
+
+ctrl=trainControl(method = "cv", number = 5,verboseIter = FALSE)
+lda_model=train(grouptype ~ ., data = df, method = "lda", trControl = ctrl)
+lda_model
+lda_model$results
+
+# Accuracy: 0.7974388
+# Misclassification Error = 1 - 0.7974388 = 0.2025612
+
+#5
+# I must reduce the dimensionality first otherwise qda will report an error: Error in qda.default(x, grouping, ...) : rank deficiency in group comp.*
+
+df1=as.data.frame(tent)
+df1=df1[, -1]
+sorted_cols1=mixedsort(colnames(df1))
+df1=df1[,sorted_cols1]
+colnames(df1)=wordlist$V1
+
+# df1=as.data.frame(lapply(df1, as.factor))
+
+df1$grouptype=newsgroups$V1
+df1$grouptype=as.factor(df1$grouptype)
+
+# 进行主成分分析（PCA）
+pca_result=prcomp(df1[, -which(names(df1) == "grouptype")], scale. = TRUE)  # 选择去除响应变量后的预测变量列
+
+# 选择保留的主成分数量或方差百分比
+# 这里以保留方差百分比为例，比如保留累积方差达到90%的主成分
+variance_threshold=0.9
+cumulative_variance=cumsum(pca_result$sdev^2) / sum(pca_result$sdev^2)
+num_components=which(cumulative_variance >= variance_threshold)[1]
+
+# 使用选定的主成分数量进行降维
+reduced_data=as.data.frame(predict(pca_result, newdata = df1)[, 1:num_components])
+
+# 将响应变量添加回降维后的数据框
+reduced_data$grouptype=df$grouptype
+
+# 训练 QDA 模型
+qda_model=train(grouptype ~ ., data = reduced_data, method = "qda", trControl = ctrl)
+qda_model
+qda_model$results
+
+# Accuracy: 0.7710264
+# Misclassification Error = 1 - 0.7710264 = 0.2289736
+
+
+#6
+library(e1071)
+
+tune_ctrl=tune.control(sampling = "cross", cross = 5)
+
+set.seed(1)
+tune.out=tune(svm, grouptype~.,data=df,kernel="linear",scale=TRUE,ranges=list(cost=c(1,5,10,15,20,25,30)),tunecontrol=tune_ctrl)
+tune.out$performances
+tune.out$best.performance
+tune.out$best.model
+
+# Accuracy: 0.8088906
+# Misclassification Error = 0.1911094
+
+
+# set.seed(1)
+# tune.out=tune(svm, grouptype~.,data=df, kernel="radial",ranges=list(cost=c(0.1,1,10,100),gamma=c(0.5,1,2,3,4)),tunecontrol=tune_ctrl)
+# summary(tune.out)
+
+
+#7
+#
+#      MODEL        Accuracy   Time cost to train models
+#
+#  Random Forest   0.8148625     Middle
+#       GBM        0.8228666     Large
+#       LDA        0.7974388     Small
+#       QDA        0.7710264     Small
+#       SVM        0.8088906     Large
+
+# The GBM has the best accuracy, however it needs the most time to train the model. Random Forest is better.
+# The SVM also takes lots of time while its performance is not so good as Random Forest.
+
+write.csv(df, file = "C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\group_data.csv", row.names = FALSE)
+
+```  
+
+3.
+```{python}
+import numpy as np
+import pandas as pd
+import random
+import matplotlib.pyplot as plt
+import math
+
+#(3)
+#1
+def getEuclidean(point1, point2):
+    dimension = len(point1)
+    dist = 0.0
+    for i in range(dimension):
+        dist += (point1[i] - point2[i]) ** 2
+    return math.sqrt(dist)
+
+def k_means(df, k, iteration):
+    #初始化簇心向量
+    index = random.sample(list(range(len(df))), k)
+    vectors = []
+    for i in index:
+        vectors.append(list(df.loc[i,].values))
+    
+    #初始化类别
+    labels = []
+    for i in range(len(df)):
+        labels.append(-1)
+    
+    while(iteration > 0):
+        #初始化簇
+        C = []
+        for i in range(k):
+            C.append([])
+        for labelIndex, item in enumerate(df.to_numpy()):
+            classIndex = -1
+            minDist = 1e6
+            for i, point in enumerate(vectors):
+                dist = getEuclidean(item, point)
+                if(dist < minDist):
+                    classIndex = i
+                    minDist = dist
+            C[classIndex].append(item)
+            labels[labelIndex] = classIndex
+        
+        for i, cluster in enumerate(C):
+            clusterHeart = []
+            dimension = df.shape[1]
+            for j in range(dimension):
+                clusterHeart.append(0)
+            for item in cluster:
+                for j, coordinate in enumerate(item):
+                    clusterHeart[j] += coordinate / len(cluster)
+            vectors[i] = clusterHeart
+        
+        iteration -= 1
+    return C, labels
+
+#2
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix
+import time
+
+df0 = pd.read_csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\group_data.csv")
+df = df0.iloc[:,0:100]
+
+scaler = StandardScaler()
+
+# 对数据进行标准化
+scaled_df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
+
+start_time = time.time()
+
+# 创建 PCA 模型并进行主成分分析
+pca = PCA(n_components=4)
+principal_components = pca.fit_transform(scaled_df)
+
+# 将主成分数据转换为数据框
+pc_df = pd.DataFrame(data=principal_components, columns=['PC1','PC2','PC3','PC4'])
+
+random.seed(123)
+C, labels = k_means(pc_df, 4, 20)
+
+pc_df.loc[:,'grouptype']=labels
+
+df0['grouptype'] = df0['grouptype'].replace('comp.*', 2)
+df0['grouptype'] = df0['grouptype'].replace('talk.*', 3)
+df0['grouptype'] = df0['grouptype'].replace('sci.*', 0)
+df0['grouptype'] = df0['grouptype'].replace('rec.*', 1)
+
+# 计算混淆矩阵
+cm = confusion_matrix(df0.loc[:,'grouptype'], labels)
+print(cm)
+
+# 计算误判率
+misclassification_rate = (np.sum(cm) - np.trace(cm)) / np.sum(cm)
+
+print("misclassification_rate: "+ str(misclassification_rate))
+
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Total cost time：{execution_time:.4f} seconds")
+
+
+#3
+df0 = pd.read_csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\group_data.csv")
+df = df0.iloc[:,0:100]
+
+scaler = StandardScaler()
+
+# 对数据进行标准化
+scaled_df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
+
+start_time = time.time()
+
+# 创建 PCA 模型并进行主成分分析
+pca = PCA(n_components=5)
+principal_components = pca.fit_transform(scaled_df)
+
+# 将主成分数据转换为数据框
+pc_df = pd.DataFrame(data=principal_components, columns=['PC1','PC2','PC3','PC4','PC5'])
+
+random.seed(123)
+C, labels = k_means(pc_df, 4, 20)
+
+pc_df.loc[:,'grouptype']=labels
+
+df0['grouptype'] = df0['grouptype'].replace('comp.*', 2)
+df0['grouptype'] = df0['grouptype'].replace('talk.*', 3)
+df0['grouptype'] = df0['grouptype'].replace('sci.*', 0)
+df0['grouptype'] = df0['grouptype'].replace('rec.*', 1)
+
+# 计算混淆矩阵
+cm = confusion_matrix(df0.loc[:,'grouptype'], labels)
+print(cm)
+
+# 计算误判率
+misclassification_rate = (np.sum(cm) - np.trace(cm)) / np.sum(cm)
+
+print("misclassification_rate: "+ str(misclassification_rate))
+
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Total cost time：{execution_time:.4f} seconds")
+
+
+#4
+#      MODEL        Accuracy   Time cost to train models
+#
+#  Random Forest   0.8148625     Middle
+#       GBM        0.8228666     Large
+#       LDA        0.7974388     Small
+#       QDA        0.7710264     Small
+#       SVM        0.8088906     Large
+#     K-means      0.4881788     Small
+
+
+#5
+# 使用 PCA 将数据投影到前三个主成分上
+pca = PCA(n_components=3)
+df_pca = pca.fit_transform(scaled_df)
+
+# 绘制投影图
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection='3d')
+
+# 绘制散点图
+ax.scatter(df_pca[:, 0], df_pca[:, 1], df_pca[:, 2], marker='o')
+
+ax.set_xlabel('Principal Component 1')
+ax.set_ylabel('Principal Component 2')
+ax.set_zlabel('Principal Component 3')
+ax.set_title('Projection of Data onto First Three Principal Components')
+
+ax.view_init(elev=10, azim=-15)
+
+plt.show()
+
+# We can see the 4 clusters' structure.
+
+```  
+
+4.
+```{r}
+#(4)
+#1
+test=read.csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\MNIST\\test_resized.csv")
+train=read.csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\MNIST\\train_resized.csv")
+
+# train[, 2:ncol(train)][train[, 2:ncol(train)] != 0]= 1
+# test[, 2:ncol(test)][test[, 2:ncol(test)] != 0]= 1
+
+train_36=train[train$label==3 | train$label==6,]
+test_36=test[test$label==3 | test$label==6,]
+
+train_36$label=as.factor(train_36$label)
+test_36$label=as.factor(test_36$label)
+
+library(e1071)
+library(caret)
+
+start_time=Sys.time()  # start time
+
+tune_ctrl=tune.control(sampling = "cross", cross = 5)
+
+set.seed(123)
+tune.out=tune(svm, label~.,data=train_36,kernel="linear",scale=TRUE,ranges=list(cost=c(0.01,0.02,0.05,0.1,0.5,1,3,10)),tunecontrol=tune_ctrl)
+
+end_time=Sys.time()    # end time
+execution_time = end_time-start_time
+execution_time
+
+tune.out$performances
+tune.out$best.performance
+tune.out$best.model
+
+# choose cost = 0.02
+
+svmfit1=svm(label~., data=train_36, kernel="linear", cost=0.02 , scale=TRUE)
+### prediction
+ypred1=predict(svmfit1,test_36)
+table(predict=ypred1, truth=test_36$label)  # confusion matrix
+sum(ypred1==test_36$label)/nrow(test_36)   # accuracy
+1-sum(ypred1==test_36$label)/nrow(test_36)  # the mis-classification error
+
+
+
+#2
+start_time=Sys.time()  # start time
+
+tune_ctrl=tune.control(sampling = "cross", cross = 5)
+
+set.seed(123)
+tune.out=tune(svm, label~.,data=train_36,kernel="radial",scale=TRUE,ranges=list(cost=c(0.5,1,4,9),gamma=c(0.001,0.01,0.1,0.5)),tunecontrol=tune_ctrl)
+
+end_time=Sys.time()    # end time
+execution_time = end_time-start_time
+execution_time
+
+tune.out$performances
+tune.out$best.performance
+tune.out$best.model
+
+# choose cost = 4, gamma = 0.001
+
+svmfit2=svm(label~., data=train_36, kernel="radial", gamma=0.001, cost = 4, scale=TRUE)
+### prediction
+ypred2=predict(svmfit2,test_36)
+table(predict=ypred2, truth=test_36$label)  # confusion matrix
+sum(ypred2==test_36$label)/nrow(test_36)   # accuracy
+1-sum(ypred2==test_36$label)/nrow(test_36)  # the mis-classification error
+
+
+#3
+# The method of radial kernel with the best parameters is a bit preciser than linear kernel. (99.51% > 99.39%)
+# While the training time is much much longer than that of linear kernel.
+
+#4
+
+train_1258=train[train$label==1 | train$label==2 | train$label==5 | train$label==8,]
+test_1258=test[test$label==1 | test$label==2 | test$label==5 | test$label==8,]
+
+train_1258$label=as.factor(train_1258$label)
+test_1258$label=as.factor(test_1258$label)
+
+start_time=Sys.time()  # start time
+
+tune_ctrl=tune.control(sampling = "cross", cross = 5)
+
+set.seed(123)
+tune.out=tune(svm, label~.,data=train_1258,kernel="linear",scale=TRUE,ranges=list(cost=c(0.02,0.05,0.1,0.5,1,3,8)),tunecontrol=tune_ctrl)
+
+end_time=Sys.time()    # end time
+execution_time = end_time-start_time
+execution_time
+
+tune.out$performances
+tune.out$best.performance
+tune.out$best.model
+
+# choose cost = 0.05
+
+svmfit3=svm(label~., data=train_1258, kernel="linear", cost=0.05 , scale=TRUE)
+### prediction
+ypred3=predict(svmfit3,test_1258)
+table(predict=ypred3, truth=test_1258$label)  # confusion matrix
+sum(ypred3==test_1258$label)/nrow(test_1258)   # accuracy
+1-sum(ypred3==test_1258$label)/nrow(test_1258)  # the mis-classification error
+
+
+#5
+
+train$label=as.factor(train$label)
+test$label=as.factor(test$label)
+
+start_time=Sys.time()  # start time
+
+tune_ctrl=tune.control(sampling = "cross", cross = 5)
+
+set.seed(123)
+tune.out=tune(svm, label~.,data=train,kernel="linear",scale=TRUE,ranges=list(cost=c(0.02,0.05,0.1,0.5,2,8)),tunecontrol=tune_ctrl)
+
+end_time=Sys.time()    # end time
+execution_time = end_time-start_time
+execution_time
+
+tune.out$performances
+tune.out$best.performance
+tune.out$best.model
+
+# choose cost = 0.05
+
+svmfit4=svm(label~., data=train, kernel="linear", cost=0.05 , scale=TRUE)
+### prediction
+ypred4=predict(svmfit4,test)
+table(predict=ypred4, truth=test$label)  # confusion matrix
+sum(ypred4==test$label)/nrow(test)   # accuracy
+1-sum(ypred4==test$label)/nrow(test)  # the mis-classification error
+
+```
+
+5.
+```{python}
+
+#(5)
+#1
+import numpy as np
+import pandas as pd
+import random
+import time
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.autograd import Variable
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+
+test=pd.read_csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\MNIST\\test_resized.csv")
+train=pd.read_csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\MNIST\\train_resized.csv")
+
+trainy=train.loc[:,"label"].values
+testy=test.loc[:,"label"].values
+
+tent1 = train.iloc[:, 1:].values
+tent1 = (tent1 - np.mean(tent1, axis=1)[:, np.newaxis]) / np.std(tent1, axis=1)[:, np.newaxis]
+tent2 = test.iloc[:, 1:].values
+tent2 = (tent2 - np.mean(tent2, axis=1)[:, np.newaxis]) / np.std(tent2, axis=1)[:, np.newaxis]
+
+trainx=np.array(tent1.reshape(30000, 12, 12))
+testx=np.array(tent2.reshape(12000, 12, 12))
+
+featuresTrain = torch.from_numpy(trainx)
+targetsTrain = torch.from_numpy(trainy).type(torch.LongTensor) # data type is long
+
+featuresTest = torch.from_numpy(testx)
+targetsTest = torch.from_numpy(testy).type(torch.LongTensor) # data type is long
+
+# Pytorch train and test TensorDataset
+train = torch.utils.data.TensorDataset(featuresTrain,targetsTrain)
+test = torch.utils.data.TensorDataset(featuresTest,targetsTest)
+
+###########################################################################################
+
+# Hyper Parameters
+# batch_size, epoch and iteration
+LR = 0.01
+batch_size = 100
+n_iters = 20000
+num_epochs = n_iters / (len(featuresTrain) / batch_size)
+num_epochs = int(num_epochs)
+
+# Pytorch DataLoader
+train_loader = torch.utils.data.DataLoader(train, batch_size = batch_size, shuffle = True)
+test_loader = torch.utils.data.DataLoader(test, batch_size = batch_size, shuffle = True)
+
+###########################################################################################
+
+# Create CNN Model
+class CNN_Model(nn.Module):
+    def __init__(self):
+        super(CNN_Model, self).__init__()
+        # Convolution 1 , input_shape=(1,12,12)
+        self.cnn1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=5, stride=1, padding=0) #output_shape=(32,8,8)
+        self.relu1 = nn.ReLU() # activation
+        # Max pool 1
+        self.maxpool1 = nn.MaxPool2d(kernel_size=2) #output_shape=(32,4,4)
+        # Convolution 2
+        self.cnn2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=0) #output_shape=(64,2,2)
+        self.relu2 = nn.ReLU() # activation
+        # Max pool 2
+        self.maxpool2 = nn.MaxPool2d(kernel_size=2) #output_shape=(64,1,1)
+        # Fully connected 1 ,#input_shape=(64*1*1)
+        self.fc1 = nn.Linear(64 * 1 * 1, 10) #output 0-9
+    
+    def forward(self, x):
+        # Convolution 1
+        out = self.cnn1(x)
+        out = self.relu1(out)
+        # Max pool 1
+        out = self.maxpool1(out)
+        # Convolution 2 
+        out = self.cnn2(out)
+        out = self.relu2(out)
+        # Max pool 2 
+        out = self.maxpool2(out)
+        out = out.view(out.size(0), -1)
+        # Linear function (readout)
+        out = self.fc1(out)
+        return out
+
+###########################################################################################
+
+model = CNN_Model()
+print(model)
+optimizer = torch.optim.Adam(model.parameters(), lr=LR)   # optimize all cnn parameters
+loss_func = nn.CrossEntropyLoss()   # the target label is not one-hotted
+input_shape = (-1,1,12,12)
+
+###########################################################################################
+
+def fit_model(model, loss_func, optimizer, input_shape, num_epochs, train_loader, test_loader):
+    # Traning the Model
+    #history-like list for store loss & acc value
+    training_loss = []
+    training_accuracy = []
+    validation_loss = []
+    validation_accuracy = []
+    for epoch in range(num_epochs):
+        #training model & store loss & acc / epoch
+        correct_train = 0
+        total_train = 0
+        for i, (images, labels) in enumerate(train_loader):
+            # 1.Define variables
+            train = Variable(images.view(input_shape)).float()
+            labels = Variable(labels)
+            # 2.Clear gradients
+            optimizer.zero_grad()
+            # 3.Forward propagation
+            outputs = model(train)
+            # 4.Calculate softmax and cross entropy loss
+            train_loss = loss_func(outputs, labels)
+            # 5.Calculate gradients
+            train_loss.backward()
+            # 6.Update parameters
+            optimizer.step()
+            # 7.Get predictions from the maximum value
+            predicted = torch.max(outputs.data, 1)[1]
+            # 8.Total number of labels
+            total_train += len(labels)
+            # 9.Total correct predictions
+            correct_train += (predicted == labels).float().sum()
+        #10.store val_acc / epoch
+        train_accuracy = 100 * correct_train / float(total_train)
+        training_accuracy.append(train_accuracy)
+        # 11.store loss / epoch
+        training_loss.append(train_loss.data)
+
+        #evaluate model & store loss & acc / epoch
+        correct_test = 0
+        total_test = 0
+        for images, labels in test_loader:
+            # 1.Define variables
+            test = Variable(images.view(input_shape)).float()
+            # 2.Forward propagation
+            outputs = model(test)
+            # 3.Calculate softmax and cross entropy loss
+            val_loss = loss_func(outputs, labels)
+            # 4.Get predictions from the maximum value
+            predicted = torch.max(outputs.data, 1)[1]
+            # 5.Total number of labels
+            total_test += len(labels)
+            # 6.Total correct predictions
+            correct_test += (predicted == labels).float().sum()
+        #6.store val_acc / epoch
+        val_accuracy = 100 * correct_test / float(total_test)
+        validation_accuracy.append(val_accuracy)
+        # 11.store val_loss / epoch
+        validation_loss.append(val_loss.data)
+        print('Train Epoch: {}/{} Traing_Loss: {} Traing_acc: {:.6f}% Val_Loss: {} Val_accuracy: {:.6f}%'.format(epoch+1, num_epochs, train_loss.data, train_accuracy, val_loss.data, val_accuracy))
+    return training_loss, training_accuracy, validation_loss, validation_accuracy
+
+###########################################################################################
+
+start_time = time.time()
+
+training_loss, training_accuracy, validation_loss, validation_accuracy = fit_model(model, loss_func, optimizer, input_shape, num_epochs, train_loader, test_loader)
+
+end_time = time.time()
+runtime = end_time - start_time
+print("程序运行时间：", runtime, "秒")
+
+
+
+
+#2
+# VAE to visulization:
+
+import keras
+from keras import layers
+
+from keras.datasets import mnist
+import numpy as np
+
+original_dim = 12 * 12
+intermediate_dim = 64
+latent_dim = 2
+
+inputs = keras.Input(shape=(original_dim,))
+h = layers.Dense(intermediate_dim, activation='relu')(inputs)
+z_mean = layers.Dense(latent_dim)(h)
+z_log_sigma = layers.Dense(latent_dim)(h)
+
+from keras import backend as K
+
+def sampling(args):
+    z_mean, z_log_sigma = args
+    epsilon = K.random_normal(shape=(K.shape(z_mean)[0], latent_dim),
+                              mean=0., stddev=0.1)
+    return z_mean + K.exp(z_log_sigma) * epsilon
+
+z = layers.Lambda(sampling)([z_mean, z_log_sigma])
+
+# Create encoder
+encoder = keras.Model(inputs, [z_mean, z_log_sigma, z], name='encoder')
+
+# Create decoder
+latent_inputs = keras.Input(shape=(latent_dim,), name='z_sampling')
+x = layers.Dense(intermediate_dim, activation='relu')(latent_inputs)
+outputs = layers.Dense(original_dim, activation='sigmoid')(x)
+decoder = keras.Model(latent_inputs, outputs, name='decoder')
+
+# instantiate VAE model
+outputs = decoder(encoder(inputs)[2])
+vae = keras.Model(inputs, outputs, name='vae_mlp')
+vae.summary()
+
+
+reconstruction_loss = keras.losses.binary_crossentropy(inputs, outputs)
+reconstruction_loss *= original_dim
+kl_loss = 1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma)
+kl_loss = K.sum(kl_loss, axis=-1)
+kl_loss *= -0.5
+vae_loss = K.mean(reconstruction_loss + kl_loss)
+vae.add_loss(vae_loss)
+vae.compile(optimizer='adam')
+
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+x_train = x_train.astype('float32') / 255.
+x_test = x_test.astype('float32') / 255.
+x_train = x_train.reshape((len(x_train), np.prod(x_train.shape[1:])))
+x_test = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
+
+def change(input_arr):
+    
+    # 缩放后每行的长度
+    scaled_length = 144
+    
+    # 生成插值的位置
+    interpolation_indices = np.linspace(0, input_arr.shape[1] - 1, scaled_length)
+    
+    # 进行线性插值
+    scaled_arr = np.zeros((input_arr.shape[0], scaled_length))
+    for i, row in enumerate(input_arr):
+        scaled_arr[i] = np.interp(interpolation_indices, np.arange(row.shape[0]), row)
+    
+    # 输出结果
+    return scaled_arr
+
+train=pd.read_csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\MNIST\\train_resized.csv")
+test=pd.read_csv("C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5054机器学习\\作业\\Final project\\MNIST\\test_resized.csv")
+trainy=train.loc[:,"label"].values
+testy=test.loc[:,"label"].values
+tent1 = train.iloc[:, 1:].values
+tent1 = (tent1 - np.mean(tent1, axis=1)[:, np.newaxis]) / np.std(tent1, axis=1)[:, np.newaxis]
+tent2 = test.iloc[:, 1:].values
+tent2 = (tent2 - np.mean(tent2, axis=1)[:, np.newaxis]) / np.std(tent2, axis=1)[:, np.newaxis]
+
+x1 = change(x_train)
+x2 = change(x_test)
+total = np.vstack((x1, x2))
+totallabel = np.concatenate((y_train, y_test))
+
+vae.fit(total, total,
+        epochs=100,
+        batch_size=32,
+        validation_data=(total, total),
+        verbose=2)
+
+x_test_encoded = encoder.predict(total)
+
+plt.figure(figsize=(16, 16))
+plt.scatter(x_test_encoded[0][:, 0], x_test_encoded[0][:, 1], c=totallabel, cmap='Set1',s=6)
+plt.colorbar()
+plt.show()
+
+#########################################################################################
+#######                        CAE example:
+
+# import keras
+# from keras import layers
+# 
+# input_img = keras.Input(shape=(28, 28, 1))
+# 
+# x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
+# x = layers.MaxPooling2D((2, 2), padding='same')(x)
+# x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+# x = layers.MaxPooling2D((2, 2), padding='same')(x)
+# x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+# encoded = layers.MaxPooling2D((2, 2), padding='same')(x)
+# 
+# # at this point the representation is (4, 4, 8) i.e. 128-dimensional
+# 
+# x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(encoded)
+# x = layers.UpSampling2D((2, 2))(x)
+# x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+# x = layers.UpSampling2D((2, 2))(x)
+# x = layers.Conv2D(16, (3, 3), activation='relu')(x)
+# x = layers.UpSampling2D((2, 2))(x)
+# decoded = layers.Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)
+# 
+# autoencoder = keras.Model(input_img, decoded)
+# autoencoder.compile(optimizer='adam', loss='binary_crossentropy')
+# 
+# from keras.datasets import mnist
+# import numpy as np
+# 
+# (x_train, _), (x_test, _) = mnist.load_data()
+# 
+# x_train = x_train.astype('float32') / 255.
+# x_test = x_test.astype('float32') / 255.
+# x_train = np.reshape(x_train, (len(x_train), 28, 28, 1))
+# x_test = np.reshape(x_test, (len(x_test), 28, 28, 1))
+# 
+# from keras.callbacks import TensorBoard
+# 
+# autoencoder.fit(x_train, x_train,
+#                 epochs=50,
+#                 batch_size=128,
+#                 shuffle=True,
+#                 validation_data=(x_test, x_test),
+#                 verbose=2,
+#                 callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
+# 
+# decoded_imgs = autoencoder.predict(x_test)
+# 
+# n = 10
+# plt.figure(figsize=(20, 4))
+# for i in range(1, n + 1):
+#     # Display original
+#     ax = plt.subplot(2, n, i)
+#     plt.imshow(x_test[i+100].reshape(28, 28))
+#     plt.gray()
+#     ax.get_xaxis().set_visible(False)
+#     ax.get_yaxis().set_visible(False)
+# 
+#     # Display reconstruction
+#     ax = plt.subplot(2, n, i + n)
+#     plt.imshow(decoded_imgs[i++100].reshape(28, 28))
+#     plt.gray()
+#     ax.get_xaxis().set_visible(False)
+#     ax.get_yaxis().set_visible(False)
+# plt.show()
+
+```
+

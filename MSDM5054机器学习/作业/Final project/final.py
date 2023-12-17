@@ -224,7 +224,7 @@ test = torch.utils.data.TensorDataset(featuresTest,targetsTest)
 LR = 0.01
 batch_size = 100
 n_iters = 20000
-num_epochs = n_iters / (len(features_train) / batch_size)
+num_epochs = n_iters / (len(featuresTrain) / batch_size)
 num_epochs = int(num_epochs)
 
 # Pytorch DataLoader

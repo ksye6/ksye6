@@ -56,7 +56,7 @@ class MCTS(object):
         self.n_in_row = n_in_row
  
         self.player = play_turn[0] # 轮到电脑出手，所以出手顺序中第一个总是电脑
-        self.confident = 1.96 # UCB中的常数 1.96
+        self.confident = 2.33 # UCB中的常数 1.96
         self.plays = {} # 记录着法参与模拟的次数，键形如(player, move)，即（玩家，落子）
         self.wins = {} # 记录着法获胜的次数
         self.max_depth = 1
@@ -172,15 +172,23 @@ class MCTS(object):
  
     def select_one_move(self, board):
         
-        if self.skip and board.steps >3:
+        if self.skip:
             percent_wins, move = max(
                 (self.wins.get((self.player, move), 0) /
                 self.plays.get((self.player, move), 1),
                 move)
                 for move in self.skip)
         
-        else:
+        elif board.steps >10:
             limited = self.adjacent2(board)+self.adjacent3(board)
+            percent_wins, move = max(
+                (self.wins.get((self.player, move), 0) /
+                 self.plays.get((self.player, move), 1),
+                 move)
+                for move in limited) # 选择胜率最高的着法 # self.board.availables
+        
+        else:
+            limited = self.adjacent2(board)
             percent_wins, move = max(
                 (self.wins.get((self.player, move), 0) /
                  self.plays.get((self.player, move), 1),
@@ -359,6 +367,10 @@ class MCTS(object):
         n=board.height
         
         tent=board.last_change["last"]
+        
+        if tent == -1:
+            return []
+        
         i=board.move_to_location(tent)[0]
         j=board.move_to_location(tent)[1]
         
@@ -450,6 +462,10 @@ class MCTS(object):
         n=board.height
         
         tent=board.last_last_change["last_last"]
+        
+        if tent == -1:
+            return []
+            
         i=board.move_to_location(tent)[0]
         j=board.move_to_location(tent)[1]
         
@@ -541,6 +557,10 @@ class MCTS(object):
         n=board.height
 
         tent=board.last_change["last"]
+        
+        if tent == -1:
+            return []
+                
         i=board.move_to_location(tent)[0]
         j=board.move_to_location(tent)[1]
         
@@ -635,7 +655,7 @@ class MCTS(object):
 
     def checkai3(self, board):
         """
-        检查玩家3
+        检查AI3
         """
         array_2d = np.array([board.states[key] for key in range(121)]).reshape(11, 11)  # 值矩阵 -1,0,1
 
@@ -648,6 +668,298 @@ class MCTS(object):
         n=board.height
 
         tent=board.last_last_change["last_last"]
+        
+        if tent == -1:
+            return []
+        
+        i=board.move_to_location(tent)[0]
+        j=board.move_to_location(tent)[1]
+        
+        player=array_2d[i][j]
+        
+        target30=[0, player, player,player, 0]
+        target31=[0, player,0, player,player,0]
+        target32=[0, player,player,0, player,0]
+
+        window_size1=len(target30)
+        window_size2=len(target31)
+        
+        results = set()
+
+        indexlist1=list([i+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A1=list(board1[m[0],m[1]] for m in indexlist1)
+
+        for a in range(len(A1) - window_size1 + 1):
+            if A1[a:a+window_size1] == target30:
+                results.add(board19[i+4][j+4-(4-a)])
+                results.add(board19[i+4][j+4+a])
+        
+        for a in range(len(A1) - window_size2 + 1):
+            if A1[a:a+window_size2] == target31:
+                # results.add(board19[i+4][j+4-(4-a)])
+                results.add(board19[i+4][j+4-(2-a)])
+                # results.add(board19[i+4][j+4+(1+a)])
+            
+            if A1[a:a+window_size2] == target32:
+                results.add(board19[i+4][j+4-(4-a)])
+                results.add(board19[i+4][j+4-(1-a)])
+                results.add(board19[i+4][j+4+(1+a)])
+        
+        indexlist2=list([i+k+4,j+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A2=list(board1[m[0],m[1]] for m in indexlist2)
+
+        for a in range(len(A2) - window_size1 + 1):
+            if A2[a:a+window_size1] == target30:
+                results.add(board19[i+4-(4-a)][j+4])
+                results.add(board19[i+4+a][j+4])
+        
+        for a in range(len(A2) - window_size2 + 1):
+            if A2[a:a+window_size2] == target31:
+                # results.add(board19[i+4-(4-a)][j+4])
+                results.add(board19[i+4-(2-a)][j+4])
+                # results.add(board19[i+4+(1+a)][j+4])
+            
+            if A2[a:a+window_size2] == target32:
+                results.add(board19[i+4-(4-a)][j+4])
+                results.add(board19[i+4-(1-a)][j+4])
+                results.add(board19[i+4+(1+a)][j+4])
+        
+        indexlist3=list([i+k+4,j+k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A3=list(board1[m[0],m[1]] for m in indexlist3)
+
+        for a in range(len(A3) - window_size1 + 1):
+            if A3[a:a+window_size1] == target30:
+                results.add(board19[i+4-(4-a)][j+4-(4-a)])
+                results.add(board19[i+4+a][j+4+a])
+        
+        for a in range(len(A3) - window_size2 + 1):
+            if A3[a:a+window_size2] == target31:
+                # results.add(board19[i+4-(4-a)][j+4-(4-a)])
+                results.add(board19[i+4-(2-a)][j+4-(2-a)])
+                # results.add(board19[i+4+(1+a)][j+4+(1+a)])
+            
+            if A3[a:a+window_size2] == target32:
+                results.add(board19[i+4-(4-a)][j+4-(4-a)])
+                results.add(board19[i+4-(1-a)][j+4-(1-a)])
+                results.add(board19[i+4+(1+a)][j+4+(1+a)])
+
+        indexlist4=list([i+k+4,j-k+4] for k in (-4,-3,-2,-1,0,1,2,3,4))
+        A4=list(board1[m[0],m[1]] for m in indexlist4)
+
+        for a in range(len(A4) - window_size1 + 1):
+            if A4[a:a+window_size1] == target30:
+                results.add(board19[i+4-(4-a)][j+4+(4-a)])
+                results.add(board19[i+4+a][j+4-a])
+        
+        for a in range(len(A4) - window_size2 + 1):
+            if A4[a:a+window_size2] == target31:
+                # results.add(board19[i+4-(4-a)][j+4+(4-a)])
+                results.add(board19[i+4-(2-a)][j+4+(2-a)])
+                # results.add(board19[i+4+(1+a)][j+4-(1+a)])
+            
+            if A4[a:a+window_size2] == target32:
+                results.add(board19[i+4-(4-a)][j+4+(4-a)])
+                results.add(board19[i+4-(1-a)][j+4+(1-a)])
+                results.add(board19[i+4+(1+a)][j+4-(1+a)])
+
+        return results
+
+    def skipf(self, board):
+        indic = self.checkai4(board) # ai4
+        if len(indic) != 0:  # ai有4
+            return list(indic)  # 直接下
+        else:   # ai没有4
+            indic2 = self.checkp4(board)  # 玩家4
+            if len(indic2) != 0:  # 玩家有4
+                return list(indic2)   # 堵玩家
+            else:  # 玩家没有4
+                indic3 = self.checkp3(board)  # 玩家活3
+                indic4 = self.checkai3(board)  # ai活3
+                if len(indic4) != 0:  # ai有活3
+                    return list(indic4)  # 直接下
+                elif len(indic3) != 0:  # ai没有活3，玩家有活3
+                    return list(indic3)  # 堵玩家
+                else:  # ai没有活3，玩家没有活3
+                    # 仅考虑玩家或ai一次不产生多个禁手点
+                    fbp = self.checkpforbidp(board)  # 玩家禁手
+                    fbai = self.checkpforbidai(board)  # ai禁手
+                    if len(fbp[0]) != 0 and len(fbai[0]) == 0: # 玩家有禁手，ai无禁手
+                        return list(fbp[0]) # 堵玩家
+                    elif len(fbp[0]) == 0 and len(fbai[0]) != 0: # 玩家无禁手，ai有禁手
+                        return list(fbai[0]) # 走禁手
+                    elif len(fbp[0]) != 0 and len(fbai[0]) != 0: # 均有禁手
+                        if 'strong' == fbp[1][0] and 'weak' == fbai[1][0]:  # 玩家强禁手，ai弱禁手
+                            return list(fbp[0]) # 堵玩家
+                        else: # 其余情况
+                            return list(fbai[0]) # 走ai禁手
+                    else: # 均无禁手
+                        pt = self.check_check_fbai(board) # ai潜力
+                        if len(pt) != 0: # ai有潜力点
+                            return list(pt) # 走潜力点
+                        else:
+                            return False
+    
+    def adjacent2(self, board):  # 周围一圈
+      
+        moved = list(set(range(board.width * board.height)) - set(board.availables))
+        adjacents = set()
+        width = board.width
+        height = board.height
+     
+        for m in moved:
+            h = m // width
+            w = m % width
+            if w < width - 1:
+                adjacents.add(m + 1) # 右
+            if w == width - 1:
+                adjacents.add(m + 1 - width) # 右到左  
+            if w > 0:
+                adjacents.add(m - 1) # 左
+            if w == 0:
+                adjacents.add(m - 1 + width) # 左到右
+            if h < height - 1:
+                adjacents.add(m + width) # 下
+            if h == height - 1:
+                adjacents.add(m + width - height*width) # 下到上
+            if h > 0:
+                adjacents.add(m - width) # 上
+            if h == 0:
+                adjacents.add(m - width + height*width) # 上到下
+            if w < width - 1 and h < height - 1:
+                adjacents.add(m + width + 1) # 右下
+            if w == width - 1 and h == height - 1:
+                adjacents.add(m + width + 1 - width - height*width) # 右下到左上
+            if w > 0 and h < height - 1:
+                adjacents.add(m + width - 1) # 左下
+            if w == 0 and h == height - 1:
+                adjacents.add(m + width - 1 + width - height*width) # 左下到右上
+            if w < width - 1 and h > 0:
+                adjacents.add(m - width + 1) # 右上
+            if w == width - 1 and h == 0:
+                adjacents.add(m - width + 1 - width + height*width) # 右上到左下
+            if w > 0 and h > 0:
+                adjacents.add(m - width - 1) # 左上
+            if w == 0 and h == 0:
+                adjacents.add(m - width - 1 + width + height*width) # 左上到右下
+     
+        adjacents = list(set(adjacents) - set(moved))
+
+        return adjacents
+
+    def adjacent3(self, board): # 周围第二圈
+      
+        moved = list(set(range(board.width * board.height)) - set(board.availables))
+        moved += self.adjacent2(board)
+        adjacents = set()
+        width = board.width
+        height = board.height
+     
+        for m in moved:
+            h = m // width
+            w = m % width
+            if w < width - 1:
+                adjacents.add(m + 1) # 右
+            if w == width - 1:
+                adjacents.add(m + 1 - width) # 右到左  
+            if w > 0:
+                adjacents.add(m - 1) # 左
+            if w == 0:
+                adjacents.add(m - 1 + width) # 左到右
+            if h < height - 1:
+                adjacents.add(m + width) # 下
+            if h == height - 1:
+                adjacents.add(m + width - height*width) # 下到上
+            if h > 0:
+                adjacents.add(m - width) # 上
+            if h == 0:
+                adjacents.add(m - width + height*width) # 上到下
+            if w < width - 1 and h < height - 1:
+                adjacents.add(m + width + 1) # 右下
+            if w == width - 1 and h == height - 1:
+                adjacents.add(m + width + 1 - width - height*width) # 右下到左上
+            if w > 0 and h < height - 1:
+                adjacents.add(m + width - 1) # 左下
+            if w == 0 and h == height - 1:
+                adjacents.add(m + width - 1 + width - height*width) # 左下到右上
+            if w < width - 1 and h > 0:
+                adjacents.add(m - width + 1) # 右上
+            if w == width - 1 and h == 0:
+                adjacents.add(m - width + 1 - width + height*width) # 右上到左下
+            if w > 0 and h > 0:
+                adjacents.add(m - width - 1) # 左上
+            if w == 0 and h == 0:
+                adjacents.add(m - width - 1 + width + height*width) # 左上到右下
+     
+        adjacents = list(set(adjacents) - set(moved))
+
+        return adjacents
+
+    def checkpforbidp(self, board):
+        """
+        检查玩家禁手
+        """ 
+        pool = self.adjacent2(board)+self.adjacent3(board)
+        forbidmove = set()
+        attribute = list()
+        for i in pool:
+            board_copy = copy.deepcopy(board)
+            board_copy.update(-self.player, i)
+            g3 = self.checkp3(board_copy)
+            g4 = self.checkp4(board_copy)
+            if len(g3) > 3:
+                forbidmove.add(i)
+                attribute.append('weak')
+            elif len(g4) >= 2 or (len(g4) > 0 and len(g3) > 0):
+                forbidmove.add(i)
+                attribute.append('strong')
+        
+        return forbidmove,attribute
+    
+    def checkpforbidai(self, board):
+        """
+        检查AI禁手
+        """        
+        pool = self.adjacent2(board)+self.adjacent3(board)
+        forbidmove = set()
+        attribute = list()
+        for i in pool:
+            board_copy = copy.deepcopy(board)
+            board_copy.update(self.player, i)
+            board_copy.last_last_change["last_last"]=board_copy.last_change["last"]
+            g3 = self.checkai3_all(board_copy)
+            g4 = self.checkai4(board_copy)
+            if len(g3) > 3:
+                forbidmove.add(i)
+                attribute.append('weak')
+                print('find forbid for ai!!')
+                print('forbid:',self.player, 'g3:',g3, 'g4:',g4)
+            elif len(g4) >= 2 or (len(g4) > 0 and len(g3) > 0):
+                forbidmove.add(i)
+                attribute.append('strong')
+                print('find forbid for ai!!')
+                print('forbid:',self.player, 'g3:',g3, 'g4:',g4)
+        
+        return forbidmove,attribute
+        
+    def checkai3_all(self, board):
+        """
+        检查AI3，返回所有点
+        """
+        array_2d = np.array([board.states[key] for key in range(121)]).reshape(11, 11)  # 值矩阵 -1,0,1
+
+        array11 = np.concatenate((array_2d[-4:,-4:], array_2d[-4:,:],array_2d[-4:,:4]), axis=1)
+        array12 = np.concatenate((array_2d[:,-4:], array_2d,array_2d[:,:4]), axis=1)
+        array13 = np.concatenate((array_2d[:4,-4:], array_2d[:4,:],array_2d[:4,:4]), axis=1)
+
+        board1 = np.concatenate((array11, array12, array13), axis=0)  # 19×19 判定棋盘 值矩阵 -1,0,1
+
+        n=board.height
+
+        tent=board.last_last_change["last_last"]
+        
+        if tent == -1:
+            return []
+        
         i=board.move_to_location(tent)[0]
         j=board.move_to_location(tent)[1]
         
@@ -738,145 +1050,22 @@ class MCTS(object):
                 results.add(board19[i+4-(1-a)][j+4+(1-a)])
                 results.add(board19[i+4+(1+a)][j+4-(1+a)])
 
-        return results
-
-    def skipf(self, board):
-        indic = self.checkai4(board)
-        if len(indic) != 0:
-            return list(indic)
-        else:
-            indic2 = self.checkp4(board)
-            if len(indic2) != 0:
-                return list(indic2)
-            else:
-                indic3 = self.checkp3(board)
-                indic4 = self.checkai3(board)
-                if len(indic3) != 0 and len(indic4) == 0:
-                    return list(indic3)
-                elif len(indic3) != 0 and len(indic4) != 0:
-                    return list(indic3)+list(indic4)
-                else:
-                    fb = self.checkpforbid(board)
-                    if len(fb) != 0 and len(indic4) != 0:
-                        return list(fb)+list(indic4)
-                    elif len(fb) != 0 and len(indic4) == 0:
-                        return list(fb)
-                    # elif len(fb) == 0 and len(indic4) != 0:
-                    #     return list(indic4)
-                    else:
-                        return False
-
-    def adjacent2(self, board):
-      
-        moved = list(set(range(board.width * board.height)) - set(board.availables))
-        adjacents = set()
-        width = board.width
-        height = board.height
-     
-        for m in moved:
-            h = m // width
-            w = m % width
-            if w < width - 1:
-                adjacents.add(m + 1) # 右
-            if w == width - 1:
-                adjacents.add(m + 1 - width) # 右到左  
-            if w > 0:
-                adjacents.add(m - 1) # 左
-            if w == 0:
-                adjacents.add(m - 1 + width) # 左到右
-            if h < height - 1:
-                adjacents.add(m + width) # 下
-            if h == height - 1:
-                adjacents.add(m + width - height*width) # 下到上
-            if h > 0:
-                adjacents.add(m - width) # 上
-            if h == 0:
-                adjacents.add(m - width + height*width) # 上到下
-            if w < width - 1 and h < height - 1:
-                adjacents.add(m + width + 1) # 右下
-            if w == width - 1 and h == height - 1:
-                adjacents.add(m + width + 1 - width - height*width) # 右下到左上
-            if w > 0 and h < height - 1:
-                adjacents.add(m + width - 1) # 左下
-            if w == 0 and h == height - 1:
-                adjacents.add(m + width - 1 + width - height*width) # 左下到右上
-            if w < width - 1 and h > 0:
-                adjacents.add(m - width + 1) # 右上
-            if w == width - 1 and h == 0:
-                adjacents.add(m - width + 1 - width + height*width) # 右上到左下
-            if w > 0 and h > 0:
-                adjacents.add(m - width - 1) # 左上
-            if w == 0 and h == 0:
-                adjacents.add(m - width - 1 + width + height*width) # 左上到右下
-     
-        adjacents = list(set(adjacents) - set(moved))
-
-        return adjacents
-
-    def adjacent3(self, board):
-      
-        moved = list(set(range(board.width * board.height)) - set(board.availables))
-        moved += self.adjacent2(board)
-        adjacents = set()
-        width = board.width
-        height = board.height
-     
-        for m in moved:
-            h = m // width
-            w = m % width
-            if w < width - 1:
-                adjacents.add(m + 1) # 右
-            if w == width - 1:
-                adjacents.add(m + 1 - width) # 右到左  
-            if w > 0:
-                adjacents.add(m - 1) # 左
-            if w == 0:
-                adjacents.add(m - 1 + width) # 左到右
-            if h < height - 1:
-                adjacents.add(m + width) # 下
-            if h == height - 1:
-                adjacents.add(m + width - height*width) # 下到上
-            if h > 0:
-                adjacents.add(m - width) # 上
-            if h == 0:
-                adjacents.add(m - width + height*width) # 上到下
-            if w < width - 1 and h < height - 1:
-                adjacents.add(m + width + 1) # 右下
-            if w == width - 1 and h == height - 1:
-                adjacents.add(m + width + 1 - width - height*width) # 右下到左上
-            if w > 0 and h < height - 1:
-                adjacents.add(m + width - 1) # 左下
-            if w == 0 and h == height - 1:
-                adjacents.add(m + width - 1 + width - height*width) # 左下到右上
-            if w < width - 1 and h > 0:
-                adjacents.add(m - width + 1) # 右上
-            if w == width - 1 and h == 0:
-                adjacents.add(m - width + 1 - width + height*width) # 右上到左下
-            if w > 0 and h > 0:
-                adjacents.add(m - width - 1) # 左上
-            if w == 0 and h == 0:
-                adjacents.add(m - width - 1 + width + height*width) # 左上到右下
-     
-        adjacents = list(set(adjacents) - set(moved))
-
-        return adjacents
-
-    def checkpforbid(self, board):
+        return results        
+        
+    def check_check_fbai(self, board):
         pool = self.adjacent2(board)+self.adjacent3(board)
-        forbidmove = set()
+        potential = set()
         for i in pool:
             board_copy = copy.deepcopy(board)
-            board_copy.update(-self.player, i)
-            g3 = self.checkp3(board_copy)
-            g4 = self.checkp4(board_copy)
-            if len(g3) > 3 or len(g4) > 2 or (len(g4) > 0 and len(g3) > 0):
-                forbidmove.add(i)
+            board_copy.update(self.player, i)
+            if len(self.checkpforbidai(board_copy)[0]) != 0:
+                potential.add(i)
         
-        return forbidmove
-        
-        
-        
-        
-        
+        return potential
+    
+            
+            
+            
+            
         
         
