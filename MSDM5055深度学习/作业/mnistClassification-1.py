@@ -297,12 +297,12 @@ if __name__ == '__main__':
             raise Exception("No SGD implementation")
 
         # test set results
-        result_test, loss_test = net_forward(net, test_data.reshape(test_data.shape[0], -1), test_label)
+        result_test, loss_test = net_forward(net, test_data.reshape(test_data.shape[0], -1) / 255.0, test_label)
         print("epoch = %d/%d, loss = %.4f, corret rate = %.3f, test correct rate = %.3f" %
               (epoch, num_epoch, loss, match_ratio(result, label), match_ratio(result_test, test_label)))
 
     # final score report of the test set
-    result_test, loss_test = net_forward(net, test_data.reshape(test_data.shape[0], -1), test_label)
+    result_test, loss_test = net_forward(net, test_data.reshape(test_data.shape[0], -1) / 255.0, test_label)
     print('Test loss = %.4f, correct rate = %.3f' % (loss_test, match_ratio(result_test, test_label)))
 
     # saving the model
