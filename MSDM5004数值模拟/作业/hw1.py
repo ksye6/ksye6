@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 # 1.(2)
 
@@ -107,6 +106,7 @@ solution = newton_method(x0, max_iter=5)
 print("Newton¡¯s method: µü´ú½á¹û:", solution)
 
 
+# 3
 
 def P(x):
     return (-5*x**2+3*x+26)/6
