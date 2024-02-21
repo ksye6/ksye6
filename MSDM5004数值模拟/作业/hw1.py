@@ -116,3 +116,17 @@ P(2)
 P(-1)
 
 
+# 6
+import numpy as np
+
+x = np.array([1.0, 1.1, 1.3, 1.5, 1.9, 2.1])
+A = np.array([[1.0]*6, x, x**2, x**3]).T
+b = np.array([1.84, 1.96, 2.21, 2.45, 2.94, 3.18]).T
+U, S, V_T = np.linalg.svd(A)
+C = np.dot(U.T,b)
+Z = C[:len(S)]/S
+coefficients = np.dot(V_T.T,Z)
+least_square_error=np.sqrt(np.sum(C[len(S):] ** 2))  # np.linalg.norm(C[len(S):])
+print("the least squares polynomial of degree 3: ","y=0.629+1.185x+0.0353x^2-0.010x^3",";least_square_error:",least_square_error)
+
+
