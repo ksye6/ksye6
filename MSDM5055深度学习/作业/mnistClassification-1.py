@@ -105,13 +105,15 @@ class Softmax(Node):
         '''
         Implement this part
         '''
-        raise Exception("No implementation of the softmax forward")
+        self.x = x
+        self.y = np.exp(x) / np.sum(np.exp(x))
+        return self.y
 
     def backward(self, delta):
         '''
         Implement this part
         '''
-        raise Exception("No implementation of the softmax backward")
+        return delta * (np.diag(self.y) - np.outer(self.y, self.y))
 
 
 class CrossEntropy(Node):
@@ -125,13 +127,15 @@ class CrossEntropy(Node):
         '''
         Implement this part
         '''
-        raise Exception("No implementation of the cross entropy forward")
+        self.l = l
+        self.x = x
+        return -np.sum((np.log(x) * l))
 
     def backward(self, delta):
         '''
         Implement this part
         '''
-        raise Exception("No implementation of the cross entropy backward")
+        return delta * (- self.l / self.x)
 
 
 class Mean(Node):
