@@ -65,7 +65,7 @@ pv
 #0.0782576
 
 
-vw=read.table("C:/ling/teaching/teaching/MSBD5006MSDM5053/Lecture-3/chap3_R/m-ibm3dx2608.txt",header=T)[,3]
+vw=read.table("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//课件//week3//chap3_R//m-ibm3dx2608.txt",header=T)[,3]
 length(vw)#996
 vw1=vw[1:984]
 
