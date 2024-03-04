@@ -74,7 +74,17 @@ fore$se
 model_D9 = arima(Decile_9, order = c(0, 0, 1))
 model_D9
 
-# (b) 零均值、等方差、正态性 检验
+# (b)
+# 参数显著性检验
+# t统计量
+t = abs(model_D9$coef)/sqrt(diag(model_D9$var.coef))
+# 自由度
+df_t = dim(Decile_9)[1]-length(model_D9$coef)
+# pt()
+pt(t,df_t,lower.tail = F)
+# p<0.05, 显著
+
+# 零均值、等方差、正态性 检验
 summary(model_D9)
 Box.test(model_D9$residuals,type="Ljung")
 tsdiag(model_D9)
@@ -88,7 +98,81 @@ fore=predict(model_D9, 4)
 fore
 
 
+######################################## ARMA
+# 模型识别
+# 1.eacf
+library(TSA)
+set.seed(123)
+k = arima.sim(500, model=list(ar=0.8,ma=0.5))
+eacf(k)
+eacf(ts(Decile_9))
+# 2.auto.arima
+library(forecast)
+auto.arima(ts(Decile_9))
+auto.arima(k)
 
+# 参数估计
+md = arima(k,order = c(1,0,1), method = 'ML')
+md
+
+# 参数显著性检验
+# t统计量
+t = abs(md$coef)/sqrt(diag(md$var.coef))
+# 自由度
+df_t = length(k)-length(md$coef)
+# pt()
+pt(t,df_t,lower.tail = F)
+# p<0.05, 则显著
+
+# 残差检验
+library(stats)
+tsdiag(md)
+
+# 模型预测
+predict(md, 10)
+
+######################################## ARIMA
+# 差分+平稳性检验
+set.seed(123)
+k = arima.sim(500, model=list(ar=0.8,ma=0.5,order=c(1,2,1)))
+ndiffs(k)
+kk = diff(k)
+kkk = diff(kk)
+library(aTSA)
+adf.test(kk)
+adf.test(kkk) # < 0.05 则平稳
+
+# 白噪声检验
+for( i in c(5,9,11) ){
+    print(Box.test(kkk,lag=i,type="Ljung-Box"))
+} # < 0.05 则非白噪声
+
+# 模型识别
+# auto.arima
+library(forecast)
+auto.arima(k)
+
+# 参数估计
+# 使用forecast包里的Arima(), 包含漂移项的影响
+md2 = Arima(k,order = c(1,2,1), include.drift = T) # Warning message: 二阶差分后不含漂移项
+
+# 参数显著性检验
+# t统计量
+t = abs(md2$coef)/sqrt(diag(md2$var.coef))
+# 自由度
+df_t = length(k)-length(md2$coef)
+# pt()
+pt(t,df_t,lower.tail = F)
+# p<0.05, 则显著
+
+# 残差检验
+library(stats)
+tsdiag(md2)
+
+# 模型预测
+fore.gnp = forecast::forecast(md2,10) # 后四列为置信区间
+plot(fore.gnp, lty=2, pch=1, type='b',xlim=c(480,512),ylim=c(20000,23500))
+lines(fore.gnp$fitted, col=2, pch=2, type='b')
 
 
 

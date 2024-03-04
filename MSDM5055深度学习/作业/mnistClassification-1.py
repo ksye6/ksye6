@@ -294,11 +294,10 @@ if __name__ == '__main__':
             result, loss = net_forward(net, x, label)
 
             net_backward(net)
-
-            '''
-            Implement the SGD update here
-            '''
-            raise Exception("No SGD implementation")
+            
+            for node in net:
+                for p, p_delta in zip(node.parameters, node.parameters_deltas):
+                    p -= learning_rate * p_delta
 
         # test set results
         result_test, loss_test = net_forward(net, test_data.reshape(test_data.shape[0], -1) / 255.0, test_label)

@@ -147,8 +147,59 @@ if __name__ == "__main__":
     xFD = finiteDiff(num_net_forward, x, x, delta)
     
     linear1_weightFD = finiteDiff(num_net_forward, x, net[0].parameters[0], delta)
-
-
-
-
-
+    
+    
+    num_epoch = 300
+    learning_rate = 1e-1
+    batchSize = 30
+    
+    loss_list = []
+    test_loss_list = []
+    
+    for epoch in range(num_epoch):
+        x = np.random.uniform(-3,3,[batchSize,1])
+        label = target(x)
+        
+        pred, loss = net_forward(net, x, label)
+        loss_list.append(loss)
+        
+        _ = net_backward(net)
+        for node in net:
+            for p, p_delta in zip(node.parameters, node.parameters_deltas):
+                p -= learning_rate * p_delta
+        
+        
+        x = np.linspace(-3,3,200)[..., None]
+        label = target(x)
+        pred, loss = net_forward(net, x, label)
+        test_loss_list.append(loss)
+        
+        plt.figure()
+        plt.plot(x, label, 'o', label="Orig.")
+        plt.plot(x, pred, '+', label="Pred.")
+        plt.legend()
+        plt.savefig("C://Users//’≈√˙Ë∫//Desktop//Pred.pdf")
+        plt.show()
+        
+        plt.close()
+        
+        plt.figure()
+        plt.plot(np.array(loss_list), label = "train")
+        plt.plot(np.array(test_loss_list), label = "test")
+        plt.legend()
+        plt.savefig("C://Users//’≈√˙Ë∫//Desktop//loss_curve.pdf")
+        plt.show()
+        
+        plt.close()        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
