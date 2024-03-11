@@ -32,10 +32,10 @@ class Linear(Node):
             x (2darray): input array of shape (batch_size, num_pixels).
         '''
         if weight is None:
-            weight = np.random.randn(input_shape, output_shape) * 0.01
-            '''
-            Implement the Xavier initalization here
-            '''
+            # weight = np.random.randn(input_shape, output_shape) * 0.01
+            xavier_scale = np.sqrt(2 / (input_shape + output_shape))
+            weight = np.random.randn(input_shape, output_shape) * xavier_scale
+        
         if bias is None:
             bias = np.zeros(output_shape)
         super(Linear, self).__init__('linear', [weight, bias])

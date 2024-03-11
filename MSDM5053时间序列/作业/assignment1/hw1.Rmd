@@ -1,0 +1,130 @@
+---
+title: "hw1"
+author: "20989977 Zhang Mingtao"
+date: "2024/3/3"
+output: html_document
+---  
+
+1.
+```{r}
+# 1
+# (a)
+
+df = read.table("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//作业//assignment1//m-dec19.txt",header=T)
+Decile_1 = df[2]
+acf_values = acf(Decile_1, lag.max = 24)
+pacf_values = pacf(Decile_1, lag.max = 24)
+```
+```{r}
+# (b)
+Box.test(Decile_1,lag=12,type="Ljung")
+# p value is small enough to make sure the first 12 lags of ACF are not all zero.
+
+```
+
+2.
+```{r}
+# 2
+# (a)
+Decile_9 = df[3]
+acf_values_2 = acf(Decile_9, lag.max = 12)
+```
+```{r}
+# (b)
+Box.test(Decile_9,lag=12,type="Ljung")
+# p value is larger than 0.05 so we accept H0: the first 12 lags of ACF are all zero.
+```
+
+
+3.
+```{r}
+# 3
+df3 = read.table("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//作业//assignment1//m-cpileng.txt",header=F)
+Xt = df3$V4
+ct = 100 * (log(Xt[2:length(Xt)]) - log(Xt[1:length(Xt)-1]))
+```
+```{r}
+# (a)
+acf_values = acf(ct, lag.max = 12)
+pacf_values = pacf(ct, lag.max = 12)
+Box.test(ct,lag=12,type="Ljung")
+# p value is small enough to make sure the first 12 lags of ACF are not all zero.
+```
+```{r}
+# (b)
+zt = ct[2:length(ct)] - ct[1:length(ct)-1]
+acf_values2 = acf(zt, lag.max = 12)
+```
+```{r}
+# (c)
+model_ct = arima(ct,order=c(1,0,5))
+model_ct
+
+```
+
+4.
+```{r}
+# 4
+df4 = read.table("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//作业//assignment1//q-gnprate.txt",header=F)
+```
+```{r}
+# (a)
+model_q = arima(df4, order = c(3, 0, 0))
+model_q
+```
+```{r}
+# (b)
+model_q$coef
+p1=c(1,-model_q$coef[1:3])
+# 多项式求根
+s1=polyroot(p1)
+s1
+# which implies the existence of stochastic cycles
+Mod(s1)
+k=2*pi/acos(1.542932/1.800683)
+k
+# the average period of business cycle is about 11.6 quarters.
+```
+```{r}
+# (c)
+fore=predict(model_q, 4)
+fore
+fore$pred
+fore$se
+```
+
+5.
+```{r}
+# 5
+```
+```{r}
+# (a)
+model_D9 = arima(Decile_9, order = c(0, 0, 1))
+model_D9
+```
+```{r}
+# (b)
+# 参数显著性检验
+# t统计量
+t = abs(model_D9$coef)/sqrt(diag(model_D9$var.coef))
+# 自由度
+df_t = dim(Decile_9)[1]-length(model_D9$coef)
+# pt()
+pt(t,df_t,lower.tail = F)
+# p<0.05, 显著
+
+# 零均值、等方差、正态性 检验
+summary(model_D9)
+Box.test(model_D9$residuals,type="Ljung")
+tsdiag(model_D9)
+# The standardized residuals are basically distributed near the zero horizontal line and in the range of -3~3; 
+# the autocorrelation function quickly drops to within the two dotted lines; 
+# the P values of the Ljung-Box statistics are all greater than 0.05
+# therefore, the model passes the test.
+```
+```{r}
+# (c)
+fore=predict(model_D9, 4)
+fore
+
+```
