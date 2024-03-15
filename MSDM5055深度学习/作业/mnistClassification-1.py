@@ -179,14 +179,15 @@ def load_MNIST():
     objects = ['t10k-images-idx3-ubyte', 't10k-labels-idx1-ubyte',
                'train-images-idx3-ubyte', 'train-labels-idx1-ubyte']
     end = ".gz"
-    path = "data/raw/"
-    cmd = ["mkdir", "-p", path]
-    subprocess.check_call(cmd)
+    path = "data\\raw"
+    os.makedirs(path,exist_ok=True)
+    # cmd = ["mkdir", "-p", path]
+    # subprocess.check_call(cmd)
     print('Downloading MNIST dataset. Please do not stop the program\
     during the download. If you do, remove `data` folder and try again.')
     for obj in objects:
         if not os.path.isfile(path + obj):
-            cmd = ["wget", base + obj + end, "-P", path]
+            # cmd = ["wget", base + obj + end, "-P", path]
             subprocess.check_call(cmd)
             cmd = ["gzip", "-d", path + obj + end]
             subprocess.check_call(cmd)

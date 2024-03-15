@@ -1,3 +1,17 @@
+---
+title: "mid project personal part"
+author: "20989977 Zhang Mingtao"
+date: "2024/3/14"
+output: html_document
+---  
+0.
+```{r}
+library(reticulate)
+```  
+
+1.
+```{python}
+
 # -*- coding: gbk -*-
 
 import fastf1
@@ -27,16 +41,16 @@ import pandas as pd
 
 ################################################################## OpenF1
 
-# Car_data # Èü³µĞÅÏ¢£¬²ÉÑùÂÊÔ¼Îª 3.7 Hz (ºÜ¶àĞĞ£¬idÎªdate)
-# responseCar_data1 = urlopen('https://api.openf1.org/v1/car_data?driver_number=23&session_key=9472') #¿ÉÑ¡²ÎÊıËÙ¶È &speed>=315
+# Car_data # èµ›è½¦ä¿¡æ¯ï¼Œé‡‡æ ·ç‡çº¦ä¸º 3.7 Hz (å¾ˆå¤šè¡Œï¼Œidä¸ºdate)
+# responseCar_data1 = urlopen('https://api.openf1.org/v1/car_data?driver_number=23&session_key=9472') #å¯é€‰å‚æ•°é€Ÿåº¦ &speed>=315
 # ALBON_Car_data = json.loads(responseCar_data1.read().decode('utf-8'))
 # ALBON_Car_data = pd.DataFrame(ALBON_Car_data)
 # ALBON_Car_data.columns
 # ALBON_Car_data.loc[:,['date', 'rpm', 'speed','n_gear', 'throttle', 'drs', 'brake']]
 
 
-# Laps # È¦ÊıĞÅÏ¢ (È¦ÊıĞĞ£¬idÎªlap_number)
-responseLaps1 = urlopen('https://api.openf1.org/v1/laps?session_key=9472&driver_number=23') #¿ÉÑ¡²ÎÊıÈ¦Êı &lap_number=8
+# Laps # åœˆæ•°ä¿¡æ¯ (åœˆæ•°è¡Œï¼Œidä¸ºlap_number)
+responseLaps1 = urlopen('https://api.openf1.org/v1/laps?session_key=9472&driver_number=23') #å¯é€‰å‚æ•°åœˆæ•° &lap_number=8
 ALBON_laps = json.loads(responseLaps1.read().decode('utf-8'))
 ALBON_laps = pd.DataFrame(ALBON_laps)
 ALBON_laps.columns
@@ -54,14 +68,14 @@ SARGEANT_laps.columns
 SARGEANT_laps['Compound'] = ["SOFT"]*10+["HARD"]*30+["SOFT"]*15
 SARGEANT_laps.loc[:,['lap_duration','lap_number','is_pit_out_lap','Compound']]
 
-# Location ×ø±ê ²ÉÑùÂÊÔ¼Îª 3.7 Hz (ºÜ¶àĞĞ£¬idÎªdate)
-# responseLocation1 = urlopen('https://api.openf1.org/v1/location?session_key=9472&driver_number=23') # ¿ÉÑ¡²ÎÊıÊ±¼ä &date>2023-09-16T13:03:35.200&date<2023-09-16T13:03:35.800
+# Location åæ ‡ é‡‡æ ·ç‡çº¦ä¸º 3.7 Hz (å¾ˆå¤šè¡Œï¼Œidä¸ºdate)
+# responseLocation1 = urlopen('https://api.openf1.org/v1/location?session_key=9472&driver_number=23') # å¯é€‰å‚æ•°æ—¶é—´ &date>2023-09-16T13:03:35.200&date<2023-09-16T13:03:35.800
 # ALBON_Location = json.loads(responseLocation1.read().decode('utf-8'))
 # ALBON_Location = pd.DataFrame(ALBON_Location)
 # ALBON_Location.columns
 # ALBON_Location.loc[:,['date', 'x', 'y', 'z']]
 
-# Pit Î¬ĞŞÇøĞÅÏ¢ ½ö°üº¬½øÕ¾ĞĞ
+# Pit ç»´ä¿®åŒºä¿¡æ¯ ä»…åŒ…å«è¿›ç«™è¡Œ
 # responsePit1 = urlopen('https://api.openf1.org/v1/pit?session_key=9158&driver_number=23')
 # ALBON_Pit = json.loads(responsePit1.read().decode('utf-8'))
 # ALBON_Pit = pd.DataFrame(ALBON_Pit)
@@ -74,18 +88,21 @@ SARGEANT_laps.loc[:,['lap_duration','lap_number','is_pit_out_lap','Compound']]
 # SARGEANT_Pit2.columns
 # SARGEANT_Pit2.loc[:,['date','pit_duration', 'lap_number']]
 
-# Stints Ã¿Ì×ÂÖÌ¥µÄÊ¹ÓÃÊ±¼ä
+# Stints æ¯å¥—è½®èƒçš„ä½¿ç”¨æ—¶é—´
 
-# Position ËÆºõÊÇÃû´Î
+# Position ä¼¼ä¹æ˜¯åæ¬¡
 
-# Intervals »ñÈ¡³µÊÖÖ®¼äµÄÊµÊ±¼ä¸ôÊı¾İÒÔ¼°ËûÃÇÓë±ÈÈüÁìÏÈÕßµÄ²î¾à, Ã¿ 4 Ãë¸üĞÂÒ»´Î¡£
+# Intervals è·å–è½¦æ‰‹ä¹‹é—´çš„å®æ—¶é—´éš”æ•°æ®ä»¥åŠä»–ä»¬ä¸æ¯”èµ›é¢†å…ˆè€…çš„å·®è·, æ¯ 4 ç§’æ›´æ–°ä¸€æ¬¡ã€‚
 
-# Weather ÌìÆø, Ã¿·ÖÖÓ¸üĞÂÒ»´Î
+# Weather å¤©æ°”, æ¯åˆ†é’Ÿæ›´æ–°ä¸€æ¬¡
 
-# Sessions ÌØ¶¨Ê±ÆÚ£¨Á·Ï°¡¢ÅÅÎ»Èü¡¢³å´Ì¡¢ÕıÈü£©
+# Sessions ç‰¹å®šæ—¶æœŸï¼ˆç»ƒä¹ ã€æ’ä½èµ›ã€å†²åˆºã€æ­£èµ›ï¼‰
 
 # Race control 
 
+```  
+
+```{python}
 ################################################################## FastF1
 
 ##### Driver Laptimes Scatterplot (All Laps)
@@ -110,7 +127,9 @@ import fastf1.plotting
 # SAR_driver_laps.loc[:,['Stint','LapNumber','PitOutTime', 'PitInTime']] # MISS LapNumber 10,11,14,16,29,41
 
 # {'SOFT': '#da291c', 'MEDIUM': '#ffd12e', 'HARD': '#1471e3', 'INTERMEDIATE': '#43b02a', 'WET': '#0067ad', 'UNKNOWN': '#00ffff', 'TEST-UNKNOWN': '#434649'}
+```
 
+```{python}
 ##
 fig, ax = plt.subplots(figsize=(6,6), dpi=300)
 
@@ -132,13 +151,13 @@ sns.lineplot(data=ALBON_laps,
              linewidth=2,
              legend=False)
 
-# ±ê×¢ºá×ø±êÎª16µÄµã
+# æ ‡æ³¨æ¨ªåæ ‡ä¸º16çš„ç‚¹
 x1 = 16
 y1 = float(ALBON_laps.loc[ALBON_laps["lap_number"] == x1, "lap_duration"].values[0])
 ax.annotate(f'Pit 1 : Lap {x1}', xy=(x1, y1), xytext=(x1, y1 + 1), ha='center', color='#1471e3',
 fontproperties=FontProperties(weight='bold', size=12), bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
 
-# ±ê×¢ºá×ø±êÎª37µÄµã
+# æ ‡æ³¨æ¨ªåæ ‡ä¸º37çš„ç‚¹
 x2 = 37
 y2 = float(ALBON_laps.loc[ALBON_laps["lap_number"] == x2, "lap_duration"].values[0])
 ax.annotate(f'Pit 2 : Lap {x2}', xy=(x2, y2), xytext=(x2, y2 + 1), ha='center', color='#1471e3',
@@ -157,7 +176,9 @@ sns.despine(left=True, bottom=True)
 plt.tight_layout()
 plt.show()
 ##
+```
 
+```{python}
 ##
 fig, ax = plt.subplots(figsize=(6,6), dpi=300)
 
@@ -195,19 +216,19 @@ sns.lineplot(data=SARGEANT_laps.iloc[40:,:],
              linewidth=2,
              legend=False)
              
-# ±ê×¢ºá×ø±êÎª11µÄµã
+# æ ‡æ³¨æ¨ªåæ ‡ä¸º11çš„ç‚¹
 x1 = 11
 y1 = float(SARGEANT_laps.loc[SARGEANT_laps["lap_number"] == x1, "lap_duration"].values[0])
 ax.annotate(f'Pit 1 : Lap {x1}', xy=(x1, y1), xytext=(x1, y1 + 3), ha='center', color='#1471e3',
 fontproperties=FontProperties(weight='bold', size=12), bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
 
-# ±ê×¢ºá×ø±êÎª29µÄµã
+# æ ‡æ³¨æ¨ªåæ ‡ä¸º29çš„ç‚¹
 x2 = 29
 y2 = float(SARGEANT_laps.loc[SARGEANT_laps["lap_number"] == x2, "lap_duration"].values[0])
 ax.annotate(f'Pit 2 : Lap {x2}', xy=(x2, y2), xytext=(x2, y2 + 6), ha='center', color='#1471e3',
 fontproperties=FontProperties(weight='bold', size=12), bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
 
-# ±ê×¢ºá×ø±êÎª41µÄµã
+# æ ‡æ³¨æ¨ªåæ ‡ä¸º41çš„ç‚¹
 x3 = 41
 y3 = float(SARGEANT_laps.loc[SARGEANT_laps["lap_number"] == x3, "lap_duration"].values[0])
 ax.annotate(f'Pit 3 : Lap {x3}', xy=(x3, y3), xytext=(x3, y3 + 2.5), ha='center', color='#da291c',
@@ -226,7 +247,9 @@ sns.despine(left=True, bottom=True)
 plt.tight_layout()
 plt.show()
 ##
+```
 
+```{python}
 ##### Driver Laptimes Distribution Visualization (Fastest Lap)
 
 f1_24_bahrain_r = fastf1.get_session(2024, 'Bahrain', 'R')
@@ -238,7 +261,9 @@ laps_alb_sar = f1_24_bahrain_r.laps.pick_drivers(['ALB', 'SAR'])
 
 driver_laps = laps_alb_sar.pick_quicklaps()
 driver_laps = driver_laps.reset_index()
+```
 
+```{python}
 ##
 # create the figure
 fig, ax = plt.subplots(figsize=(10, 10))
@@ -274,7 +299,9 @@ plt.suptitle("2023 Azerbaijan Grand Prix Lap Time Distributions",y = 0.99)
 plt.tight_layout()
 plt.show()
 ##
+```
 
+```{python}
 
 ##### Gear shifts on track (Fastest Lap)
 
@@ -307,7 +334,9 @@ cmap = colormaps['Paired']
 lc_comp = LineCollection(segments, norm=plt.Normalize(1, cmap.N+1), cmap=cmap)
 lc_comp.set_array(gear)
 lc_comp.set_linewidth(4)
+```
 
+```{python}
 ##
 fig = plt.figure(figsize=(10,10), dpi=300)
 plt.gca().add_collection(lc_comp)
@@ -325,7 +354,9 @@ cbar.set_ticklabels(np.arange(1, 9))
 
 plt.show()
 ##
+```
 
+```{python}
 ##### Speed visualization on track map (Fastest Lap)
 
 import matplotlib as mpl
@@ -334,7 +365,9 @@ year = 2024
 wknd = 3
 ses = 'R'
 colormap = mpl.cm.plasma
+```
 
+```{python}
 ##
 # albon
 driver1 = 'ALB'
@@ -377,7 +410,9 @@ legend = mpl.colorbar.ColorbarBase(fig.add_axes([0.25, 0.05, 0.5, 0.05]), norm=n
 # Show the plot
 plt.show()
 ##
+```
 
+```{python}
 ##
 # sargeant
 driver2 = 'SAR'
@@ -420,7 +455,9 @@ legend = mpl.colorbar.ColorbarBase(fig.add_axes([0.25, 0.05, 0.5, 0.05]), norm=n
 # Show the plot
 plt.show()
 ##
+```
 
+```{python}
 
 ##### Position changes during a race
 
@@ -451,7 +488,9 @@ plt.suptitle("Position changes during the race", y=0.999)
 
 plt.show()
 ##
+```
 
+```{python}
 
 ##### Distance to driver ahead during the race
 
@@ -468,6 +507,9 @@ laps_sar['AVG_DistanceToDriverAhead_Bylap'] = AVG_DistanceToDriverAhead_Bylap2
 
 plt.rcdefaults()
 
+```
+
+```{python}
 # alb
 ##
 fig, ax = plt.subplots(figsize=(6,6), dpi=300)
@@ -486,7 +528,9 @@ sns.despine(left=True, bottom=True)
 plt.tight_layout()
 plt.show()
 ##
+```
 
+```{python}
 # sar
 ##
 fig, ax = plt.subplots(figsize=(6,6), dpi=300)
@@ -506,18 +550,4 @@ plt.tight_layout()
 plt.show()
 ##
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
