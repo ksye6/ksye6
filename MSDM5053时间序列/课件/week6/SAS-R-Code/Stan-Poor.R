@@ -1,5 +1,5 @@
 
-vw=read.table("C:/ling/teaching/teaching/MSBD5006MSDM5053/Lecture-6/SAS-R-Code/SP.txt",
+vw=read.table("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//课件//week6//SAS-R-Code//SP.txt",
               header=T)[,3]
 A=vw
 vw

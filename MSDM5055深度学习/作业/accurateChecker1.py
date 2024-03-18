@@ -1,3 +1,6 @@
+import sys
+module_path = 'C:\\Users\\张铭韬\\Desktop\\学业\\港科大\\MSDM5055深度学习\\作业'
+sys.path.append(module_path)
 from mnistClassification import Linear, Sigmoid, Softmax, CrossEntropy, Mean, load_MNIST, match_ratio, net_forward
 import numpy as np
 import json

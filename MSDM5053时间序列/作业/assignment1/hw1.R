@@ -129,7 +129,10 @@ library(stats)
 tsdiag(md)
 
 # 模型预测
-predict(md, 10)
+fore=predict(md, 10)
+
+# 若对数化，则需要还原
+exp(fore$pred+fore$se*fore$se/2)
 
 ######################################## ARIMA
 # 差分+平稳性检验
@@ -145,7 +148,7 @@ adf.test(kkk) # < 0.05 则平稳
 # 白噪声检验
 for( i in c(5,9,11) ){
     print(Box.test(kkk,lag=i,type="Ljung-Box"))
-} # < 0.05 则非白噪声
+} # < 0.05 则非白噪声, 有意义
 
 # 模型识别
 # auto.arima
@@ -173,6 +176,20 @@ tsdiag(md2)
 fore.gnp = forecast::forecast(md2,10) # 后四列为置信区间
 plot(fore.gnp, lty=2, pch=1, type='b',xlim=c(480,512),ylim=c(20000,23500))
 lines(fore.gnp$fitted, col=2, pch=2, type='b')
+
+
+######################################## SEASONAL_ARIMA
+
+# 在上述基础上先进行season阶滞后差分
+# 例如diff(data,lag=n_season)
+
+# 差分+平稳性检验
+# 白噪声检验
+# 模型识别
+# 参数估计
+# 参数显著性检验
+# 残差检验
+# 模型预测
 
 
 

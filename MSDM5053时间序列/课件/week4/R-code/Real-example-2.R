@@ -1,5 +1,5 @@
 
-vw=read.table("C:/ling/teaching/teaching/MSBD5006MSDM5053/Lecture-4/Jepan-USA.txt",header=T)[,2]
+vw=read.table("C://Users///张铭韬//Desktop//学业//港科大//MSDM5053时间序列//课件//week4//data//Jepan-USA.txt",header=T)[,2]
 
 A=vw
 length(A) #359

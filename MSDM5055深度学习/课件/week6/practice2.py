@@ -124,20 +124,23 @@ a.triu(diagonal=2) # ÍùÓÒÆ«ÒÆ
 # nn.Sequential
 # nn.ModuleList
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 class ConvResidualBlock(nn.Module):
     def __init__(self, channels, channelsOut=None, activation=F.relu):
         super(ConvResidualBlock, self).__init__()
         if channelsOut is None:
             channelsOut = channels
-        
         self.activation = activation
-        self.convLayers = nn.ModuleList([nn.Conv2d(channels, channelsOut, kernel_size=3, padding=1),
-                                         nn.Conv2d(channelsOut, channelsOut, kernel_size=3, padding=1)])
-    
-    def forward(self,inputs):
+        self.convLayers = nn.ModuleList([
+            nn.Conv2d(channels, channelsOut, kernel_size=3, padding=1),
+            nn.Conv2d(channelsOut, channelsOut, kernel_size=3, padding=1),
+        ])
+
+    def forward(self, inputs):
         temps = inputs
         temps = self.convLayers[0](temps)
         temps = self.activation(temps)
@@ -146,20 +149,39 @@ class ConvResidualBlock(nn.Module):
         temps = self.activation(temps)
         return temps
 
+
 class ConvResidualNet(nn.Module):
     def __init__(self, inChannels, outChannels, hiddenChannels, numBlocks=2, activation=F.relu):
-        super(ConvResidualBlock, self).__init__()
+        super(ConvResidualNet, self).__init__()
         self.hiddenChannels = hiddenChannels
-        self.inital = nn.Conv2d(in_channel = inChannels, out_channel = outChannels, kernel_size=1, padding=0)
-        self.blocks = nn.ModuleList([ConvResidualBlock(channels=hiddenChannels, activation=activation) for _ in range(numBlock)])
+        self.initial = nn.Conv2d(
+            in_channels=inChannels,
+            out_channels=hiddenChannels,
+            kernel_size=1,
+            padding=0
+        )
+        self.blocks = nn.ModuleList([
+            ConvResidualBlock(
+                channels=hiddenChannels,
+                activation=activation,
+            ) for _ in range(numBlocks)
+        ])
         self.final = nn.Conv2d(hiddenChannels, outChannels, kernel_size=1, padding=0)
-    
-    def forward(self,inputs):
-        temps = self.inital(inputs)
+
+    def forward(self, inputs):
+        temps = self.initial(inputs)
         for block in self.blocks:
             temps = block(temps)
         outputs = self.final(temps)
+
         return outputs
+
+
+if __name__ == "__main__":
+    net = ConvResidualNet(2, 90*2, 400, 2)
+
+    inputs = torch.randn(10, 2, 16, 16)
+    outputs = net(inputs)
 
 
 
