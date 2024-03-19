@@ -215,6 +215,16 @@ sns.lineplot(data=SARGEANT_laps.iloc[40:,:],
              palette={'SOFT': '#da291c', 'MEDIUM': '#ffd12e', 'HARD': '#1471e3', 'INTERMEDIATE': '#43b02a', 'WET': '#0067ad', 'UNKNOWN': '#00ffff', 'TEST-UNKNOWN': '#434649'},
              linewidth=2,
              legend=False)
+
+special = SARGEANT_laps.iloc[28:40,:]
+special["Compound"] = ['HARD(Old tire)']*12
+sns.lineplot(data=special,
+             x="lap_number",
+             y="lap_duration",
+             hue="Compound",
+             palette={'SOFT': '#da291c', 'MEDIUM': '#ffd12e', 'HARD(Old tire)': '#13226b', 'INTERMEDIATE': '#43b02a', 'WET': '#0067ad', 'UNKNOWN': '#00ffff', 'TEST-UNKNOWN': '#434649'},
+             linewidth=3,
+             legend='auto')
              
 # 标注横坐标为11的点
 x1 = 11
@@ -293,7 +303,7 @@ sns.swarmplot(data=driver_laps,
 ax.set_xlabel("Driver")
 ax.set_ylabel("Lap Time (s)")
 plt.grid(color='black', which='major', axis='both', linestyle='dashed',alpha=0.8)
-plt.suptitle("2023 Azerbaijan Grand Prix Lap Time Distributions",y = 0.99)
+plt.suptitle("2024 Bahrain Race Time Distributions",y = 0.99)
 # sns.despine(left=True, bottom=True)
 
 plt.tight_layout()
