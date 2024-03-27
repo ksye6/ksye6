@@ -1,1 +1,0 @@
-{"struct": ["linear", "sigmoid", "linear", "softmax", "cross_entropy", "mean"], "num_parametes": [[784, 80], null, [80, 10], null, null, null]}

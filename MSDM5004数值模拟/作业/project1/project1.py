@@ -79,11 +79,12 @@ def Crank_Nicolson_method(J, dx, dt, tlist):
     U[:, -1] = 0
 
     # 系数矩阵
-    A = diags([-mu, 1+2*mu, -mu], [-1, 0, 1], shape=(J+1, J+1)).toarray()
+    A = diags([-mu/2, 1+mu, -mu/2], [-1, 0, 1], shape=(J+1, J+1)).toarray()
+    B = diags([mu/2, 1-mu, mu/2], [-1, 0, 1], shape=(J+1, J+1)).toarray()
     
     # 迭代计算数值解
     for n in range(len(t) - 1):
-        U[n+1, :] = np.linalg.solve(A, U[n, :])
+        U[n+1, :] = np.linalg.solve(np.dot(np.linalg.inv(B),A), U[n, :])
 
     # 绘制数值解
     fig, ax = plt.subplots()
