@@ -138,7 +138,7 @@ exp(fore$pred+fore$se*fore$se/2)
 # 差分+平稳性检验
 set.seed(123)
 k = arima.sim(500, model=list(ar=0.8,ma=0.5,order=c(1,2,1)))
-ndiffs(k)
+ndiffs(k) # forecast
 kk = diff(k)
 kkk = diff(kk)
 library(aTSA)
@@ -179,13 +179,13 @@ lines(fore.gnp$fitted, col=2, pch=2, type='b')
 
 
 ################################################################################################################## SARIMA
-# decompose观察
 # 在上述基础上先进行season阶滞后差分
 # 例如diff(data,lag=n_season)
+# decompose观察 plot(decompose(ts(x,frequency=nseason)))
 
 # 差分+平稳性检验
 # 白噪声检验
-# 模型识别
+# 模型识别 ts函数需要设置frequency
 # 参数估计
 # 参数显著性检验
 # 残差检验
@@ -202,7 +202,7 @@ library(tseries)
 
 # 异方差检验
 library(aTSA)
-# arch.test(fit, output = T) # 上半残差序列及平方序列的散点图，下半PQ检验和LM检验的P值，p小拒绝原假设，具备异方差性，考虑低阶GARCH
+# arch.test(fit, output = T) # 上半残差序列及平方序列的散点图,下半PQ检验和LM检验的P值,p小拒绝原假设,具备异方差性,考虑低阶GARCH
 
 # GARCH拟合
 fit11=garch(fit$residuals, order = c(1,1))

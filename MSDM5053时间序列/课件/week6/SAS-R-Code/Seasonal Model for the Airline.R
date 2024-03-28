@@ -32,7 +32,6 @@ plot(w2,xlab=" ",ylab=" ",main="w2 ",type="l",col="red",ylim=c(-0.1,0.35))
 w3=diff(diff(lgAP,12))
 plot(w3,xlab=" ",ylab=" ",main="w3 ",type="l",col="red",ylim=c(-0.35,0.35))
 
-
 #unitrootTest(lgAP,lags=1,type=c("c"),)
 
 #unitrootTest(w3,lags=1,type=c("c"))

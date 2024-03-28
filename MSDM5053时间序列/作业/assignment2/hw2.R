@@ -1,0 +1,233 @@
+
+######################### 1
+df = read.table("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//作业//assignment2//m-mortg.txt",header=F)
+# log transformation
+ts1 = log(ts(df$V4))
+plot(ts1)
+
+# 差分+平稳性检验
+library(forecast)
+ndiffs(ts1) # 差分一次即平稳
+
+ts1_d1 = diff(ts1)
+plot(ts1_d1)
+
+library(aTSA)
+adf.test(ts1_d1) # p值 < 0.05, 拒绝H0, 表示平稳
+
+# 白噪声检验
+for( i in c(5,9,12) ){
+  print(Box.test(ts1_d1,lag=i,type="Ljung-Box"))
+} # < 0.05 则非白噪声, 有继续分析的意义
+
+# 观察
+acf(ts1_d1, lag.max = 12)
+pacf(ts1_d1, lag.max = 12)
+
+# 模型识别
+# 1.
+library(TSA)
+eacf(ts1_d1) # 可粗略选取最接近左上角的参数, ARMA(2,0), 但无法详细评估
+# 2.
+# library(forecast) 默认结合AIC指标与复杂度
+auto.arima(ts1_d1) # ARMA(2,1)
+auto.arima(ts1) # ARIMA(2,1,1)
+
+# 参数估计
+md = Arima(ts1, order = c(2,1,1), include.drift = T, method = 'ML')
+md
+# (1 - φ_1*B - φ_2*B^2) * (1 - B)^d * p_t = θ_0 + (1 - θ_1*B) * a_t, where d = 1, φ_1 = 0.3077, φ_2 = -0.2296, θ_0 = -0.001, θ_1 = 0.2179
+
+# 参数显著性检验
+# t统计量
+t = abs(md$coef)/sqrt(diag(md$var.coef))
+# 自由度
+df_t = length(ts1)-length(md$coef)
+# pt()
+pt(t,df_t,lower.tail = F)
+# p<0.05, 则显著, 可见ma1系数不显著, 进而考虑ARIMA(2,1,0)模型
+
+md2 = Arima(ts1, order = c(2,1,0), include.drift = T, method = 'ML')
+md2
+# (1 - φ_1*B - φ_2*B^2) * (1 - B)^d * p_t = θ_0 + a_t, where d = 1, φ_1 = 0.5034, φ_2 = -0.3031, θ_0 = -0.001
+t = abs(md2$coef)/sqrt(diag(md2$var.coef))
+df_t = length(ts1)-length(md2$coef)
+pt(t,df_t,lower.tail = F)
+# 均显著, drift可忽略, 选择ARIMA(2,1,0)模型: (1 - 0.5034*B - -0.3031*B^2) * (1 - B) * p_t = a_t
+
+# 残差检验
+library(stats)
+Box.test(md2$residuals,lag=12,type="Ljung")
+# p value is larger than 0.05 so we cannot refuse H0: the first 12 lags of residuals'ACF are all zero, thus is white noise.
+tsdiag(md2)
+# The standardized residuals are basically distributed near the zero horizontal line; 
+# the autocorrelation function quickly drops to within the two dotted lines; 
+# the P values of the Ljung-Box statistics are all greater than 0.05
+# therefore, the model passes the test.
+
+# 模型预测
+# (1) Arima函数 对应 forecast::forecast
+fore.gnp = forecast::forecast(md2,4) # 后四列为置信区间
+plot(fore.gnp, lty=2, pch=1, type='b',xlim=c(360,376),ylim=c(1.4,2.2))
+# lines(fore.gnp$fitted, col=2, pch=2, type='b')
+
+# (2) arima函数 对应 predict, 实际上arima函数未考虑drift, 准确度不如Forecast包的Arima函数, 此处仅作画图演示
+md2_2 = arima(ts1, order = c(2,1,0), method = 'ML')
+fore=predict(md2_2, 4)
+fore
+
+U=append(ts1[370],fore$pred+1.96*fore$se)
+L=append(ts1[370],fore$pred-1.96*fore$se)
+
+plot(359:370,ts1[359:370],xlim=c(359,374),ylim=c(1.4,2.2),type="o",ylab="",xlab="",main="Forecasting of log(mortgage)")
+lines(370:374,append(ts1[370],fore$pred),type="o",col="red")
+lines(370:374, U,type="l",col="blue")
+lines(370:374, L,type="l",col="blue")
+legend(x="topleft",c("log(mortgage)","prediction"),lty=c(1,1),pch=c(1,1),col=c("black","red"))
+
+# 因为原数据进行过对数化,需要还原
+U1=fore$pred + 1.96 * fore$se
+L1=fore$pred - 1.96 * fore$se
+U2=exp(U1)
+L2=exp(L1)
+E1 = exp(fore$pred+fore$se*fore$se/2)
+
+plot(359:370,df$V4[359:370],xlim=c(359,374),ylim=c(4.5,8),type="o",ylab="",xlab="",main="Forecasting of mortgage")
+lines(370:374,append(df$V4[370],E1),type="o",col="red")
+lines(370:374,append(df$V4[370],U2),type="l",col="blue")
+lines(370:374,append(df$V4[370],L2),type="l",col="blue")
+#points(temp.date[2:7],p,type="o")
+legend(x="topleft",c("true mortgage","prediction"),lty=c(1,1),pch=c(1,1),col=c("black","red"))
+
+
+######################### 2
+df2 = read.table("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//作业//assignment2//m-dec1-8006.txt",header=F)
+ts2 = ts(df2$V2,frequency=12) # frequency=12 is very impoortant for use in Arima() and auto.arima()
+plot(ts2)
+
+# 观察季节性
+acf(ts2) # 明显季节性
+pacf(ts2) # 明显季节性
+
+# 参数估计
+arima(ts2, order = c(0, 0, 1), seasonal = list(order = c(1,0,1),  period = 12))
+# or this function, actually their results are the same
+est=Arima(ts2, order = c(0, 0, 1), seasonal = c(1,0,1))
+est
+# ARIMA(p, d, q)×(P, D, Q)_s model : ΦP(B^s) * φp(B) * (1 - B)^d * (1 - B^s)^D * pt = θ0 + θq(B) * ΘQ(B^s) * at
+# In this case, the model is actually: (1-0.9995*B^12) * pt = 0.0179 + (1-0.2409*B) * (1+0.983*B^12) * at
+
+# 参数显著性检验
+# t统计量
+t = abs(est$coef)/sqrt(diag(est$var.coef))
+# 自由度
+df_t = length(ts2)-length(est$coef)
+# pt()
+pt(t,df_t,lower.tail = F)
+# p<0.05, 均显著
+
+# 残差检验
+Box.test(est$residuals,lag=24,type="Ljung")
+# p value is larger than 0.05 so we cannot refuse H0: the first 12 lags of residuals'ACF are all zero, thus is white noise.
+tsdiag(est)
+# The standardized residuals are basically distributed near the zero horizontal line; 
+# the autocorrelation function quickly drops to within the two dotted lines; 
+# the P values of the Ljung-Box statistics are all greater than 0.05
+# therefore, the model passes the test.
+
+######################### 3
+df3 = read.table("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//作业//assignment2//q-aa-earn.txt",header=F)
+ts3 = ts(df3$V4)
+plot(ts3)
+
+# (p)acf图 无季节性
+acf(ts3)
+pacf(ts3)
+
+# 判断差分+平稳性检验
+ndiffs(ts3) # d=1, 差分一次即平稳
+ts3_d1 = diff(ts3)
+library(tseries)
+pp.test(ts3_d1) # p值 < 0.05, 拒绝H0, 表示平稳
+plot(ts3_d1)
+acf(ts3_d1)
+pacf(ts3_d1)
+
+# 白噪声检验
+for( i in c(2,4,6,8) ){
+  print(Box.test(ts3_d1,lag=i,type="Ljung-Box"))
+} # < 0.05 则非白噪声, 有继续分析的意义, 但在8阶以后滞后可认为无相关性
+
+
+# 模型识别
+# 1.
+eacf(ts3_d1) # 可粗略选取ARMA((0,1,2),(1,2))
+# 2.
+auto.arima(ts3_d1) # ARMA(0,0,1)
+auto.arima(ts3) # ARIMA(0,1,1)
+
+# 参数估计
+md3 = Arima(ts3, order = c(0,1,1), include.drift = T, method = 'ML')
+md3
+# (1 - B)^d * p_t = θ_0 + (1 - θ_1*B) * a_t, where d = 1, θ_0 = 0.0112, θ_1 = -0.5079
+
+# 参数显著性检验
+# t统计量
+t = abs(md3$coef)/sqrt(diag(md3$var.coef))
+# 自由度
+df_t = length(ts3)-length(md3$coef)
+# pt()
+pt(t,df_t,lower.tail = F)
+# p<0.05, 显著, drift可忽略, 选择ARIMA(0,1,1)模型: (1 - B) * p_t = (1 + 0.5079 * B) * a_t
+
+# 异方差检验 library(aTSA)
+arch.test(arima(ts3, order = c(0,1,1), method = 'ML'), output = T)
+# 上半残差序列及平方序列的散点图, 下半PQ检验和LM检验的P值, p>0.05, 所以不拒绝原假设, 不具备异方差性, 不考虑GARCH
+
+# 残差检验
+Box.test(md3$residuals,lag=12,type="Ljung")
+# p value is larger than 0.05 so we cannot refuse H0: the first 12 lags of residuals'ACF are all zero, thus is white noise.
+tsdiag(md3)
+# The standardized residuals are basically distributed near the zero horizontal line; 
+# the autocorrelation function quickly drops to within the two dotted lines; 
+# the P values of the Ljung-Box statistics are all greater than 0.05
+# therefore, the model passes the test.
+
+# 模型预测
+# (1) Arima函数 对应 forecast::forecast
+fore.gnp = forecast::forecast(md3,4) # 后四列为置信区间
+plot(fore.gnp, lty=2, pch=1, type='b',xlim=c(40,66),ylim=c(-0.25,1.3))
+# lines(fore.gnp$fitted, col=2, pch=2, type='b')
+
+# (2) arima函数 对应 predict, 实际上arima函数未考虑drift, 准确度不如Forecast包的Arima函数, 此处仅作画图演示
+md3_2 = arima(ts3, order = c(0,1,1), method = 'ML')
+fore=predict(md3_2, 4)
+fore
+
+U=append(ts3[61],fore$pred+1.96*fore$se)
+L=append(ts3[61],fore$pred-1.96*fore$se)
+
+plot(40:61,ts3[40:61],xlim=c(40,66),ylim=c(-0.25,1.3),type="o",ylab="",xlab="",main="Forecasting of Earnings")
+lines(61:65,append(ts3[61],fore$pred),type="o",col="red")
+lines(61:65, U,type="l",col="blue")
+lines(61:65, L,type="l",col="blue")
+legend(x="topleft",c("Earnings","prediction"),lty=c(1,1),pch=c(1,1),col=c("black","red"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
