@@ -39,20 +39,20 @@ train_counter = []
 test_losses = []
 test_counter = [i * len(train_loader.dataset) for i in range(n_epochs + 1)] # [0, 60000, 120000, 180000]
 
-# Net (1, 1, 28, 28) -> (1, 10, 24, 24);(1, 10, 12, 12) -> (1, 20, 8, 8);(1, 20, 4, 4) -> 20 * 4 * 4 = 320
+# Net (1, 1, 28, 28) -> 1 * 28 * 28 = 784
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super(NeuralNetwork, self).__init__()
-        self.conv1 = nn.Conv2d(1, 10, kernel_size=5) # 5乘5卷积层1 1 -> 10
-        self.conv2 = nn.Conv2d(10, 20, kernel_size=5) # 5乘5卷积层2 10 -> 20
-        self.conv2_drop = nn.Dropout2d() # 随机丢弃防止过拟合
-        self.fc1 = nn.Linear(320, 50) # fc1 320 -> 50
-        self.fc2 = nn.Linear(50, 10) # fc2 50 -> 10 分成十类
+        # self.conv1 = nn.Conv2d(1, 10, kernel_size=5) # 5乘5卷积层1 1 -> 10
+        # self.conv2 = nn.Conv2d(10, 20, kernel_size=5) # 5乘5卷积层2 10 -> 20
+        # self.conv2_drop = nn.Dropout2d() # 随机丢弃防止过拟合
+        self.fc1 = nn.Linear(784, 80) # fc1 784 -> 80
+        self.fc2 = nn.Linear(80, 10) # fc2 80 -> 10 分成十类
 
     def forward(self, x):
-        x = F.relu(F.max_pool2d(self.conv1(x), 2)) # 2乘2maxpool + ReLU
-        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2)) # 2乘2maxpool + ReLU
-        x = x.reshape(-1, 320) # (batch_size, num_channels, height, width) -> (batch_size, 320)
+        # x = F.relu(F.max_pool2d(self.conv1(x), 2)) # 2乘2maxpool + ReLU
+        # x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2)) # 2乘2maxpool + ReLU
+        x = x.reshape(-1, 784) # (batch_size, num_channels, height, width) -> (batch_size, 784)
         x = F.relu(self.fc1(x))  # fc1
         x = F.dropout(x, training=self.training) # dropout
         x = self.fc2(x) # fc2 分成十类
@@ -114,7 +114,7 @@ def test():
 test()
 
 # main
-for epoch in range(1, n_epochs + 8):
+for epoch in range(1, n_epochs + 15):
     train(epoch)
     test()
 
