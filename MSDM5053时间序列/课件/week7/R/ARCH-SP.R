@@ -10,7 +10,7 @@ setwd("C:/ling/teaching/teaching/MSBD5006MSDM5053/Lecture-7/R")  #set my working
 
 #########Example3.3 page134
 #library(fGarch)
-sp5=scan(file="sp500.txt") # Load data
+sp5=ts(read.table("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//课件//week7//R//sp500.txt"))
 plot(sp5,type="l")
 
 acf(sp5,20,main="",col="red",ylim=c(-1,1))

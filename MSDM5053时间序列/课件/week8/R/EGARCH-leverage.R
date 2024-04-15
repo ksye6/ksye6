@@ -47,7 +47,7 @@ Box.test(res^2,10,type="Ljung")#p-value = 0.01082
 ####################################################################################
 
 
-data=read.csv("Dow.csv",header=T)[,7]
+data=read.csv("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//课件//week7//data//Dow.csv",header=T)[,7]
 #da=rev(data)
 length(data)#20172
 length1=20172-772

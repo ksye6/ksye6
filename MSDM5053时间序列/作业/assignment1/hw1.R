@@ -198,29 +198,64 @@ library(tseries)
 
 # 平稳性检验 pp.test(difx)
 # 白噪声检验
-# 模型识别
-# 参数估计
-# 参数显著性检验
 
-# 异方差检验
+# 可直接检验ARCH效应检验
+sp5=ts(read.table("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//课件//week7//R//sp500.txt"))
+plot(sp5)
+acf(sp5,20,main="",col="red")
+pacf(sp5,20,main="",col="red")
+Box.test(sp5,lag=12,type="Ljung")
+at=sp5-mean(sp5)
+acf(at^2,20,main="",col="red")
+pacf(at^2,20,main="",col="red")
+Box.test(at^2,lag=12,type="Ljung")
+# 若无ARCH效应, 应>0.05, 即at^2为白噪声
+
+# ARMA模型识别
+# ARMA参数估计
+# ARMA参数显著性检验
+
+# ARCH异方差检验
 library(aTSA)
 # arch.test(fit, output = T) # 上半残差序列及平方序列的散点图,下半PQ检验和LM检验的P值,p小拒绝原假设,具备异方差性,考虑低阶GARCH
 
 # GARCH拟合
 fit11=garch(fit$residuals, order = c(1,1))
 summary(fit11)
-# 模型诊断
-plot(fit11) 
 
-# 其他GARCH族
+
+library(fGarch)
+# Fit an MA(3)+GARCH(1,1) model.
+m1=garchFit(~arma(0,3)+garch(1,1),data=sp5,trace=F,cond.dist="norm")
+
+# 显著性检验
+summary(m1)
+
+# 模型诊断
+plot(fit11)
+
+stresi=residuals(m1,standardize=T)
+plot(stresi,type="l")
+Box.test(stresi,10,type="Ljung")
+Box.test(stresi^2,10,type="Ljung")
+
+# 预测
+predict(m1, n.ahead = 10, trace = FALSE, mse = c("cond","uncond"), plot=TRUE, nx=NULL, crit_val=NULL, conf=NULL)
+
+# 其他GARCH族 https://www.math.pku.edu.cn/teachers/lidf/course/fts/ftsnotes/html/_ftsnotes/fts-garch.html#garch-garchm
 library(rugarch)
-spec1=ugarchspec(variance.model=list(model="eGARCH"), mean.model=list(armaOrder=c(0,0),include.mean = TRUE) )
-mm=ugarchfit(spec=spec1,data=ibm)
+spec1=ugarchspec(variance.model=list(model="eGARCH"), mean.model=list(armaOrder=c(0,0),include.mean = TRUE),distribution.model = "std")
+# GARCH-M model: sGARCH, archm=TRUE, ARCH-in-mean parameter: c(archm);
+# EGARCH model: eGARCH, leverage parameter: α_1, leverage = α_1/γ_1;
+# IGARCH model: iGARCH; ...
+mm=ugarchfit(spec=spec1,data=data)
 res=residuals(mm,standardize=T)
 Box.test(res,10,type="Ljung")#p-value = 0.9611
 Box.test(res,20,type="Ljung")#p-value = 0.3925
 Box.test(res^2,10,type="Ljung")#p-value = 0.01082
-predict(mm, n.ahead = 10, trace = FALSE, mse = c("cond","uncond"), plot=TRUE, nx=NULL, crit_val=NULL, conf=NULL)
+# 预测
+forecast = ugarchforecast(mm, n.ahead = 4, data=data)
+plot(forecast, which = 1)
 
 ################################################################################################################## SARIMA-EGARCH a method
 
