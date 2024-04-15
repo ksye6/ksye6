@@ -128,6 +128,8 @@ pt(t,df_t,lower.tail = F)
 library(stats)
 tsdiag(md)
 
+Box.test(k,lag=12,type="Ljung",fitdf = npara) # 处理自由度，fitdf为模型参数个数
+
 # 模型预测
 fore=predict(md, 10)
 
@@ -295,7 +297,179 @@ plotforecasted <- function(m = 60) {
 plotforecasted(120)
 
 
-##################################################################################################################  ????????
+##################################################################################################################  VARMA
+library(mvtnorm)
+p1=matrix(c(.816,-1.116,-.623,1.074),2,2)
+p2=matrix(c(-.643,.615,.592,-.133),2,2)
+p3=matrix(c(.2,-.6,.3,1.1),2,2) # Input phi_1
+phi=cbind(p1,p2)
+t1=matrix(c(0,-.801,-1.248,0),2,2)
+Sig=matrix(c(4,2,2,5),2,2)
+
+# 平稳处理
+# MTSplot(y)
+
+# Use MTS Package
+library(MTS)
+### VARMA
+m1=VARMAsim(1000,arlags=c(1,2),malags=c(1),phi=phi,theta=t1,sigma=Sig)
+zt=m1$series
+par(mfrow=c(2,2))
+plot(zt[,1],type="l",col="blue",ylab="Log rate",xlab="")
+plot(zt[,2],type="l",col="blue",ylab="Log rate",xlab="")
+# 白噪声检验
+ccm(zt, lag=10)
+mq(zt,adj=12)
+# 模型识别 + 参数估计
+m2=Eccm(zt,maxp=5,maxq=6)
+m2=VARMA(zt,p=2,q=1) ## fit a VARMA(2,1) model
+# 残差检验
+MTSdiag(m2, adj=12)
+# or mq
+r1=m2$residuals
+mq(r1,adj=12) # 系数矩阵的总参数个数
+# 参数显著性检验 + 残差检验
+m2b=refVARMA(m2,thres=1.96) # refine further the fit.
+MTSdiag(m2b, adj=10)
+# or mq
+r2b=m2b$residuals
+mq(r2b,adj=10)
+# 预测
+VARMApred(m2b, h=4)
+
+### VAR
+m1=VARMAsim(1000,arlags=c(1,2),phi=phi,sigma=Sig)
+zt=m1$series
+# 白噪声检验
+ccm(zt, lag=10)
+mq(zt,10)
+# 模型识别 + 参数估计
+VARorder(zt, maxp = 10, output = T) # VARselect(zt, lag.max=10,type="const")
+m2=VAR(zt,p=2) # ,output = T, include.mean =T, fixed = NULL
+# 残差检验
+MTSdiag(m2,adj=8)
+# or mq
+resi=m2$residuals
+mq(resi,adj=8) # 系数矩阵的总参数个数
+# 参数显著性检验 + 残差检验
+m2b=refVAR(m2,thres=1.96) # Model refinement.
+MTSdiag(m2b,adj=8)
+# or mq
+mq(m2b$residuals,adj=8)
+# 预测
+VARpred(m2b,8)
+
+### VMA
+m1=VARMAsim(1000,malags=c(1),theta=t1,sigma=Sig)
+zt=m1$series
+# 白噪声检验
+ccm(zt, lag=10)
+mq(zt,10)
+# 模型识别 + 参数估计
+VMAorder(zt,lag=20)
+m2=VMA(zt,q=1) # ,include.mean=F
+# m2=VMAe(zt,q=1)
+# 残差检验
+MTSdiag(m2,adj=4)
+# or mq
+resi=m2$residuals
+mq(resi,adj=4) # 系数矩阵的总参数个数
+# 参数显著性检验 + 残差检验
+m2b=refVMA(m2,thres=1.96) # Model refinement.  # refVMAe()
+MTSdiag(m2b,adj=4)
+# or mq
+mq(m2b$residuals,adj=4)
+# 预测
+VMApred(m2b,2)
+# ls("package:MTS")
+# help(package = "MTS")
+# https://github.com/d-/MTS/blob/master/R/MTS.R
+
+VMApred <- function(model,h=1,orig=0){
+  # Computes the i=1, 2, ..., h-step ahead predictions of a VMA(q) model.
+  #
+  # model is a VMA output object.
+  # created on April 20, 2011
+  #
+  x=model$data
+  resi=model$residuals
+  Theta=model$Theta
+  sig=model$Sigma
+  mu=model$mu
+  q=model$MAorder
+  np=dim(Theta)[2]
+  psi=-Theta
+  #
+  nT=dim(x)[1]
+  k=dim(x)[2]
+  if(orig <= 0)orig=nT
+  if(orig > T)orig=nT
+  if(length(mu) < 1)mu=rep(0,k)
+  if(q > orig){
+    cat("Too few data points to produce forecasts","\n")
+  }
+  pred=NULL
+  se=NULL
+  px=as.matrix(x[1:orig,])
+  for (j in 1:h){
+    fcst=mu
+    t=orig+j
+    for (i in 1:q){
+      jdx=(i-1)*k
+      t1=t-i
+      if(t1 <= orig){
+        theta=Theta[,(jdx+1):(jdx+k)]
+        fcst=fcst-matrix(resi[t1,],1,k)%*%t(theta)
+      }
+    }
+    px=rbind(px,fcst)
+    #
+    Sig=sig
+    if (j > 1){
+      jj=min(q,(j-1))
+      for (ii in 1:jj){
+        idx=(ii-1)*k
+        wk=psi[,(idx+1):(idx+k)]
+        Sig=Sig+wk%*%sig%*%t(wk)
+      }
+    }
+    se=rbind(se,sqrt(diag(Sig)))
+  }
+  cat("Forecasts at origin: ",orig,"\n")
+  print(px[(orig+1):(orig+h),],digits=4)
+  cat("Standard Errors of predictions: ","\n")
+  print(se[1:h,],digits=4)
+  pred=px[(orig+1):(orig+h),]
+  if(orig < nT){
+    cat("Observations, predicted values, and errors","\n")
+    tmp=NULL
+    jend=min(nT,(orig+h))
+    for (t in (orig+1):jend){
+      case=c(t,x[t,],px[t,],x[t,]-px[t,])
+      tmp=rbind(tmp,case)
+    }
+    colnames(tmp) <- c("time",rep("obs",k),rep("fcst",k),rep("err",k))
+    idx=c(1)
+    for (j in 1:k){
+      idx=c(idx,c(0,1,2)*k+j+1)
+    }
+    tmp = tmp[,idx]
+    print(tmp,digits=3)
+  }
+  
+  VMApred <- list(pred=pred,se.err=se)
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

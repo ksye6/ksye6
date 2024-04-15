@@ -164,6 +164,7 @@ if __name__ == "__main__":
         loss_list.append(loss)
         
         _ = net_backward(net)
+        
         for node in net:
             for p, p_delta in zip(node.parameters, node.parameters_deltas):
                 p -= learning_rate * p_delta
@@ -183,15 +184,15 @@ if __name__ == "__main__":
         
         plt.close()
         
-        plt.figure()
-        plt.plot(np.array(loss_list), label = "train")
-        plt.plot(np.array(test_loss_list), label = "test")
-        plt.legend()
-        plt.savefig("C://Users//ÕÅÃúèº//Desktop//loss_curve.pdf")
-        plt.show()
-        
-        plt.close()        
-        
+    plt.figure()
+    plt.plot(np.array(loss_list), label = "train")
+    plt.plot(np.array(test_loss_list), label = "test")
+    plt.legend()
+    plt.savefig("C://Users//ÕÅÃúèº//Desktop//loss_curve.pdf")
+    plt.show()
+    
+    plt.close()        
+    
         
         
         
