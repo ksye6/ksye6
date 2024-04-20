@@ -259,7 +259,7 @@ predict(m4, n.ahead = 5, trace = FALSE, mse = c("cond","uncond"), plot=TRUE, nx=
 c(-0.04930263,0.06642749)
 
 
-######################### 4
+######################### 5
 df3 = read.table("C://Users//张铭韬//Desktop//学业//港科大//MSDM5053时间序列//作业//assignment3//d-exuseu.txt",header=F)
 #  Convert the simple returns into percentage log returns
 log_returns_df3 = log(1 + ts(df3$V4))

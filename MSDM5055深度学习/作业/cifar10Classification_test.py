@@ -14,6 +14,9 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
+os.chdir("C:\\Users\\张铭韬\\文档")
+os.getcwd()
+
 batch_size = 128
 
 transform = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -45,14 +48,14 @@ class ConvResidualBlock(nn.Module):
     def __init__(self, inChannels, outChannels, stride=1):
         super(ConvResidualBlock, self).__init__()
         self.conv1 = conv3x3(inChannels, outChannels, stride)
-        self.bn1 = nn.BatchNorm2d(outChannels) # 批归一化层
+        self.bn1 = nn.BatchNorm2d(outChannels)
         self.conv2 = conv3x3(outChannels, outChannels)
-        self.bn2 = nn.BatchNorm2d(outChannels) # 批归一化层
+        self.bn2 = nn.BatchNorm2d(outChannels)
         
         self.shortcut = nn.Sequential()
         if stride != 1 or inChannels != self.expansion*outChannels:
             self.shortcut = nn.Sequential(nn.Conv2d(inChannels, self.expansion*outChannels, kernel_size=1, stride=stride, bias=False),
-                                          nn.BatchNorm2d(self.expansion*outChannels)) # 将输入x调整为与残差块的输出具有相同的维度，以便进行元素级的加法操作
+                                          nn.BatchNorm2d(self.expansion*outChannels))
     
     def forward(self, x):
         out = torch.relu(self.bn1(self.conv1(x)))
@@ -73,14 +76,14 @@ class ResNet(nn.Module):
         # self.layer3 = self.formlayer(block, 256, num_blocks[2], stride=2)
         # self.layer4 = self.formlayer(block, 512, num_blocks[3], stride=2)
         # self.linear = nn.Linear(512*block.expansion, num_classes) # FC
-        self.inChannels = 2
-        self.conv1 = conv3x3(3,2)
-        self.bn1 = nn.BatchNorm2d(2)
-        self.layer1 = self.formlayer(block, 2, num_blocks[0], stride=1)
-        self.layer2 = self.formlayer(block, 4, num_blocks[1], stride=2)
-        self.layer3 = self.formlayer(block, 8, num_blocks[2], stride=2)
-        self.layer4 = self.formlayer(block, 16, num_blocks[3], stride=2)
-        self.linear = nn.Linear(16*block.expansion, num_classes) # FC
+        self.inChannels = 3
+        self.conv1 = conv3x3(3,3)
+        self.bn1 = nn.BatchNorm2d(3)
+        self.layer1 = self.formlayer(block, 3, num_blocks[0], stride=1)
+        self.layer2 = self.formlayer(block, 6, num_blocks[1], stride=2)
+        self.layer3 = self.formlayer(block, 12, num_blocks[2], stride=2)
+        self.layer4 = self.formlayer(block, 20, num_blocks[3], stride=2)
+        self.linear = nn.Linear(20*block.expansion, num_classes) # FC
     
     def formlayer(self, block, outChannels, num_blocks, stride):
         strides = [stride] + [1]*(num_blocks-1)
@@ -177,7 +180,7 @@ scheduler = StepLR(optimizer, step_size=50, gamma=0.1)
 
 start_epoch = 0
 # Run training and testing
-for epoch in range(start_epoch, start_epoch+80):
+for epoch in range(start_epoch, start_epoch+100):
     train(epoch)
     test(epoch)
 

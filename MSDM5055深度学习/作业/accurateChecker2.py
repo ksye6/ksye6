@@ -6,7 +6,7 @@ from torchvision import datasets, transforms
 
 from pytorchMnist import NeuralNetwork, test_loader, batch_size
 
-net = torch.load('mnistNet.pth')
+net = torch.load('C://Users//张铭韬//Desktop//学业//港科大//MSDM5055深度学习//作业//hw2_para//mnistNet.pth')
 
 params = list(net.parameters())
 params = list(filter(lambda p: p.requires_grad, params))

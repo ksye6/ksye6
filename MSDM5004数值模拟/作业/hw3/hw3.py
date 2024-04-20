@@ -1,6 +1,10 @@
 import numpy as np
+from cmath import sin, cos, pi
+from math import log, ceil
+from numpy.fft import *
 import matplotlib.pyplot as plt
-# 1
+
+################################################ 1
 # (a)
 piano = np.loadtxt('C:/Users/张铭韬/Desktop/学业/港科大/MSDM5004数值模拟/作业/hw3/piano.txt')
 # Plot the piano
@@ -61,8 +65,8 @@ def calculate_frequency(signal, sample_rate):
     spectrum = np.fft.fft(signal)
     magnitude = np.abs(spectrum)
     freq_axis = np.fft.fftfreq(len(signal), 1/sample_rate)
-    max_index = np.argmax(magnitude)
-    frequency = freq_axis[max_index]
+    maxindex = np.argmax(magnitude)
+    frequency = freq_axis[maxindex]
     return abs(frequency)
 
 note_piano = freq_to_note(calculate_frequency(piano, 44100))
@@ -72,18 +76,251 @@ print(note_trumpet)
 # which means the note C
 
 
-# 2
+################################################ 2
+
+class MyFFT():
+    def __init__(self, mylist=[], N=0):  # mylist 是传入的待计算的离散序列，N是序列采样点数，对于本方法，点数必须是2^n才可以得到正确结果
+        self._list = mylist  # 初始化数据
+        self.N = N
+        self.total_layers = 0  # 序列的总层数
+        self.reverse_list = []  # 位倒序列表
+        self.output =  []  # 计算结果存储列表
+        self.W = []  # 系数因子列表
+        for k in range(len(self._list)):
+            self.reverse_list.append(self._list[self.reverse_pos(k)])
+        self.output = self.reverse_list.copy()
+        for k in range(self.N):
+            self.W.append((cos(2 * pi / N) - sin(2 * pi / N) * 1j) ** k)  # 提前计算W值,1j虚数单位
+
+    def reverse_pos(self, num):  # 得到位倒序后的索引
+        out = 0
+        bits = 0
+        tent = self.N
+        data = num
+        while (tent != 0):
+            tent = tent // 2
+            bits += 1
+        for i in range(bits - 1):
+            out = out << 1
+            out |= (data >> i) & 1
+        self.total_layers = bits - 1
+        return out
+
+    def FFT(self, mylist, N, abs=True):  # 计算序列傅里叶变换结果,返回列表,未经归一化处理,abs=True:取绝对值
+        self.__init__(mylist, N)
+        for m in range(self.total_layers):
+            split = self.N // 2 ** (m + 1)
+            num_each = self.N // split
+            for k in range(split):
+                for kk in range(num_each // 2):
+                    temp = self.output[k * num_each + kk]
+                    temp2 = self.output[k * num_each + kk + num_each // 2] * self.W[kk * 2 ** (self.total_layers - m - 1)]
+                    self.output[k * num_each + kk] = (temp + temp2)
+                    self.output[k * num_each + kk + num_each // 2] = (temp - temp2)
+        if abs == True:
+            for k in range(len(self.output)):
+                self.output[k] = self.output[k].__abs__()
+        return np.array(self.output)
+
+    def FFT_normalized(self, mylist, N):  # 计算序列傅里叶变换结果,返回列表,经过归一化处理
+        self.FFT(mylist, N)
+        max = 0   # 存储元素最大值
+        for k in range(len(self.output)):
+            if max < self.output[k]:
+                max = self.output[k]
+        for k in range(len(self.output)):
+            self.output[k] /= max
+        return np.array(self.output)
+
+    def IFFT(self, mylist, N):  # 傅里叶逆变换，返回列表
+        self.__init__(mylist, N)
+        for k in range(self.N):
+            self.W[k] = (cos(2 * pi / N) - sin(2 * pi / N) * 1j) ** (-k)
+        for m in range(self.total_layers):
+            split = self.N // 2 ** (m + 1)
+            num_each = self.N // split
+            for k in range(split):
+                for kk in range(num_each // 2):
+                    temp = self.output[k * num_each + kk]
+                    temp2 = self.output[k * num_each + kk + num_each // 2] * self.W[kk * 2 ** (self.total_layers - m - 1)]
+                    self.output[k * num_each + kk] = (temp + temp2)
+                    self.output[k * num_each + kk + num_each // 2] = (temp - temp2)
+        for k in range(self.N):  # 根据IFFT计算公式对所有计算列表中的元素进行*1/N的操作
+            self.output[k] /= self.N
+            self.output[k] = self.output[k].__abs__()
+        return np.array(self.output)
+
+    def DFT(self, mylist, N):  # 离散傅里叶变换结果,返回列表,未经归一化处理
+        self.__init__(mylist, N)
+        origin = self._list.copy()
+        for i in range(self.N):
+            temp = 0
+            for j in range(self.N):
+                temp += origin[j] * (((cos(2 * pi / self.N) - sin(2 * pi / self.N) * 1j)) ** (i * j))
+            self.output[i] = temp.__abs__()
+        return np.array(self.output)
+
+# (a)
+xg = np.arange(-1,17)
+xh = np.arange(-2,18)
+g = np.array([1,1,1,0,0,0,0,0,1,2,0,2,1,0,0,0,1,1])
+h = np.array([0.5, 1, 0.5])
+y = np.convolve(g, h)
+print(y)
+
+plt.figure(figsize=(12, 12))
+plt.scatter(xg,g,label="g")
+plt.scatter(xh,y,label="h")
+plt.xticks(np.arange(-2, 19, 1))
+plt.grid(True)
+plt.legend()
+plt.show()
+
+# (b)
+# h_M[n] = h[n+kM], in this case, h_M'[n] = h_M[n], n=0,1,2,...,M-1; h_M'[n+M] = h_M'[n]
+# h_M'[n] = [0.5,1,0.5,0,0,0,0,0,0,0,0,0,0,0,0,0]
+
+y = y[2:-2] # M=0,1,...,15
+h = np.append(h, [0]*13)
+epsilon = 1e-12
+
+print(y)
+print(h)
+
+# (c)
+
+# ft_h_M = np.fft.fft(h)
+# ft_y = np.fft.fft(y)
+# g_prime = np.fft.ifft(ft_y / (ft_h_M+epsilon))
+# g_prime
+# I've tested that the results are same.
 
 
+# (c)
+ft_h_M = MyFFT().FFT(h, 16, False)
+print(ft_h_M)
 
+# (d)
+ft_y= MyFFT().FFT(y, 16, False)
+print(ft_y)
 
+# (e)
+g_prime = MyFFT().IFFT(ft_y / (ft_h_M+epsilon), 16)
+print(g_prime)
 
+################################################ 3
+def my_fft_calc(matx,Wr,axis):
+    pic=np.zeros(matx.shape,dtype=complex)
+    if matx.shape[axis]==2:
+        if axis==0:
+            pic[0,:]=matx[0,:]+Wr*matx[1,:]
+            pic[1,:]=matx[0,:]-Wr*matx[1,:]
+        elif axis==1:
+            pic[:,0]=matx[:,0]+Wr[:,0]*matx[:,1]
+            pic[:,1]=matx[:,0]-Wr[:,0]*matx[:,1]
+        return pic
+    else:
+        if axis==0:
+            A=my_fft_calc(matx[::2,:],Wr[::2,:],0)
+            B=my_fft_calc(matx[1::2,:],Wr[::2,:],0)
+            pic[0:matx.shape[0]//2,:]=A+Wr*B
+            pic[matx.shape[0]//2:matx.shape[0],:]=A-Wr*B
+        if axis==1:
+            A=my_fft_calc(matx[:,::2],Wr[:,::2],1)
+            B=my_fft_calc(matx[:,1::2],Wr[:,::2],1)
+            pic[:,0:matx.shape[1]//2]=A+Wr*B
+            pic[:,matx.shape[1]//2:matx.shape[1]]=A-Wr*B
+        return pic
 
+def my_fft_1d(matx,axis):
+    if(axis==0):
+        Wr = np.zeros((matx.shape[0]//2,matx.shape[1]),dtype=complex)
+        temp=np.zeros((1,matx.shape[0]//2),dtype=complex)
+        for i in range(0,matx.shape[0]//2):
+            temp[0][i] = np.cos(2 * np.pi * i / matx.shape[0]) - 1j * np.sin(2 * np.pi * i / matx.shape[0])
+        for i in range(0,matx.shape[1]):
+            Wr[:,i]=temp
+    elif(axis==1):
+        Wr=np.zeros((matx.shape[0],matx.shape[1]//2),dtype=complex)
+        temp=np.zeros(matx.shape[1]//2,dtype=complex)
+        for i in range(0,matx.shape[1]//2):
+            temp[i] = np.cos(2*np.pi*i/matx.shape[1])-1j*np.sin(2*np.pi*i/matx.shape[1])
+        for i in range(0,matx.shape[0]):
+            Wr[i,:]=temp
+    else:
+        Wr=np.zeros(matx.shape)
+    return my_fft_calc(matx,Wr,axis)
 
+def my_fft_2d(matx):
+    shape=matx.shape
+    fft_res = np.zeros(shape,dtype=complex)
+    N=2
+    while(N<shape[0]):
+        N = N<<1
+    num1 = N-shape[0]
+    N=2
+    while(N<shape[1]):
+        N = N<<1
+    num2 = N-shape[1]
+    fft_res = my_fft_1d(np.pad(matx,((num1//2,num1-num1//2),(0,0)),'edge'),0)[num1//2:num1//2+shape[0],:]
+    return fft2(matx)
+    fft_res = my_fft_1d(np.pad(fft_res,((num2//2,num2-num2//2),(0,0)),'edge'),1)[:,num2//2:num2//2+shape[1]]
+    return fft_res
 
+def my_ifft_2d(matx):
+    shape=matx.shape
+    N=2
+    while(N<shape[0]):
+        N=N<<1
+    num1=shape[0]-N
+    N=2
+    while(N<shape[1]):
+        N=N<<1
+    num2=shape[1]-N
+    return ifft2(matx)
+    ifft_res=my_ifft_1d(np.pad(matx,((num1//2,num1-num1//2),(0,0)),'edge'),0)[num1//2:num1//2+shape[0],:]
+    ifft_res=my_ifft_1d(np.pad(ifft_res,((0,0),(num2//2,num2-num2//2)),'edge'),1)[:,num2//2:num2//2+shape[1]]
+    return ifft_res
 
+def my_ifft_1d(matx,axis):
+    if(axis==0):
+        Wr=np.zeros((matx.shape[0]//2,matx.shape[1]),dtype=complex)
+        temp=np.zeros((matx.shape[0]//2,),dtype=complex)
+        for i in range(0,matx.shape[0]//2):
+            temp[i]=np.cos(2*np.pi*i/matx.shape[0])+1j*np.sin(2*np.pi*i/matx.shape[0])
+        for i in range(0,matx.shape[1]):
+            Wr[:,i]=temp
+    elif(axis==1):
+        Wr=np.zeros((matx.shape[0],matx.shape[1]//2),dtype=complex)
+        temp=np.zeros((matx.shape[1]//2,),dtype=complex)
+        for i in range(0,matx.shape[1]//2):
+            temp[i]=np.cos(2*np.pi*i/matx.shape[1])+1j*np.sin(2*np.pi*i/matx.shape[1])
+        for i in range(0,matx.shape[1]):
+            Wr[i,:]=temp
+    else:
+        Wr=np.zeros((matx.shape[0],matx.shape[1]),dtype=complex)
+    return my_fft_calc(matx,Wr,axis)*(1.0/matx.shape[axis])
 
+x = np.arange(0, 1.01, 0.01) # col
+y = np.arange(0, 2.01, 0.01) # row
+rou = np.zeros((len(y), len(x)))
 
+rou[-2, :] = - np.cos(np.pi * x / 2)/(0.01**2)
+
+rou_prime = my_fft_2d(rou)
+
+rows, cols = rou_prime.shape
+x_coords, y_coords = np.meshgrid(np.arange(cols), np.arange(rows))
+denominator = np.cos(2 * np.pi * y_coords / len(y)) + np.cos(2 * np.pi * x_coords / len(x)) - 2
+denominator[0,0]-=0.00001
+phi_prime = rou_prime * (0.01**2) / 2 / denominator
+
+phi = my_ifft_2d(phi_prime)
+
+plt.figure(figsize=(12, 12))
+plt.plot(phi)
+plt.grid(True)
+plt.show()
 
 
 

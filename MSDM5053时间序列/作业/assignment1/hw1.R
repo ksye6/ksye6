@@ -420,6 +420,8 @@ VMApred(m2b,2)
 # help(package = "MTS")
 # https://github.com/d-/MTS/blob/master/R/MTS.R
 
+# 或者用VARMA拟合VMA，设置参数p为0
+
 VMApred <- function(model,h=1,orig=0){
   # Computes the i=1, 2, ..., h-step ahead predictions of a VMA(q) model.
   #

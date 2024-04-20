@@ -167,6 +167,10 @@ H2 = nolds.hurst_rs(ts_MSFT_update)
 print(H2)
 # H2=0.481 < 0.5, the ts_MA has a bit of negative effect, indicating that the future trend is opposite to the past.
 
+# from hurst import compute_Hc
+# compute_Hc(ts_MA_update,kind='change')
+# compute_Hc(ts_MSFT_update,kind='change')
+
 # N:窗口数; n:每个窗口的样本数
 # def rescaled_range(X, n):
 #     # 计算每个窗口内的均值
@@ -279,7 +283,7 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
-nolds.dfa(ts_MSFT_update)
+# nolds.dfa(ts_MSFT_update)
 
 # Both are consistent with the Hurst exponent.
 
@@ -593,7 +597,7 @@ from hurst import compute_Hc
 # MA
 he1 = []
 for i, imf in enumerate(IMFs_MA):
-    H, c, val = compute_Hc(imf)
+    H, c, val = compute_Hc(imf,kind='change')
     he1.append(H)
 
 orders1 = np.arange(1, len(IMFs_MA) + 1)
@@ -607,7 +611,7 @@ plt.show()
 # MSFT
 he2 = []
 for i, imf in enumerate(IMFs_MSFT):
-    H, c, val = compute_Hc(imf)
+    H, c, val = compute_Hc(imf,kind='change')
     he2.append(H)
 
 orders2 = np.arange(1, len(IMFs_MSFT) + 1)
