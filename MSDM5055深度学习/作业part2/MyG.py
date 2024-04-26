@@ -28,27 +28,29 @@ class XYDataset(Dataset):
         return ret
 
 
-train_set = XYDataset(data[:-10000, :, :, :])
+
+trainset = XYDataset(data[:-10000, :, :, :])
 train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                            shuffle=True)
-test_set = XYDataset(data[10000:, :, :, :])
+testset = XYDataset(data[10000:, :, :, :])
 test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                          shuffle=False)
-# samples= next(iter(test_loader))
-# print(samples.size())
+                                         
+samples= next(iter(train_loader))
+print(samples)
 
-# # 预览图片
-# import cv2
-# import torchvision
-# imgs = torchvision.utils.make_grid(samples).numpy()
-# # 逆归一化
-# imgs = imgs * 0.5 + 0.5
-# # 通道转置到最内维度
-# imgs = imgs.transpose(1, 2, 0)
-# # RGB2BGR
-# imgs = cv2.cvtColor(imgs, cv2.COLOR_RGB2BGR)
-# cv2.imshow('win',imgs)
-# cv2.waitKey(0)
+# 预览图片
+import cv2
+import torchvision
+imgs = torchvision.utils.make_grid(samples).numpy()
+# 逆归一化
+imgs = imgs * 0.5 + 0.5
+# 通道转置到最内维度
+imgs = imgs.transpose(1, 2, 0)
+# RGB2BGR
+imgs = cv2.cvtColor(imgs, cv2.COLOR_RGB2BGR)
+cv2.imshow('win',imgs)
+cv2.waitKey(0)
 
 
 import torch.nn as nn
@@ -58,7 +60,7 @@ class Generator(nn.Module): # output_size = (input_size - 1) * stride - 2 * padd
     def __init__(self, num_z, ngf, num_channels):
         super(Generator, self).__init__()
         self.num_z = num_z
-        self.save_path = './dcgan_netG.pth'
+        self.save_path = './data/generative/dcgan_netG.pth'
         # 每一层逆卷积之后都有BN批量标准化函数，是DCGAN论文的主要贡献
         self.main = nn.Sequential(
             # 输入是Z，进入卷积
@@ -102,7 +104,7 @@ class Generator(nn.Module): # output_size = (input_size - 1) * stride - 2 * padd
 class Discriminator(nn.Module):
     def __init__(self, ndf, num_channels):
         super(Discriminator, self).__init__()
-        self.save_path = './dcgan_netD.pth'
+        self.save_path = './data/generative/dcgan_netD.pth'
         self.main = nn.Sequential(
             # # 输入[(nc), 64,  64]
             # nn.Conv2d(num_channels, ndf, 4, 2, 1, bias=False),
@@ -156,7 +158,6 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 import time
 from datetime import timedelta
-from GANs import Generator, Discriminator
 
 
 # 初始化权重
@@ -170,18 +171,19 @@ def init_weights(m):
     elif classname.find('BatchNorm') != -1:
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
- 
+
 def get_time_dif(start_time):
     """获取已使用时间"""
     end_time = time.time()
     time_dif = end_time - start_time
     return timedelta(seconds=int(round(time_dif)))
- 
+
+
 # 对抗训练
 def train(netG, netD, trainloader, writer):
     start_time = time.time()
     # 训练epochs数
-    num_epochs = 20
+    num_epochs = 24
     # 论文建议学习率
     lr = 0.0002
     # Adam优化器betas
@@ -203,20 +205,23 @@ def train(netG, netD, trainloader, writer):
     # 记录上次目标值增加的batch数
     last_improveD = 0
     last_improveG = 0
-    most_batch = 500    # 训练停止条件
+    most_batch = 10000    # 训练停止条件
     flag = False  # 记录是否可以停止
  
     for epoch in range(num_epochs):
         # 数据加载器中的每个batch
-        for real, _ in trainloader:
+        for real in trainloader:
             ############################
             # 训练判别器，目标为最大化log(D(x)) + log(1 - D(G(z)))
             ############################
+            real=real.to(device)
             netD.zero_grad()
             batch_size = real.size(0)
             # 使用真实样本训练D
-            real_labels = torch.full((batch_size,), real_label)
+            real_labels = torch.full((batch_size,), real_label, dtype=torch.float)
+            real_labels = real_labels.to(device)
             real_outputs = netD(real).view(-1)
+            real_outputs = real_outputs.to(device)
             # 计算真实样本的损失值
             lossD_real = loss_func(real_outputs, real_labels)
             # lossD_real.backward()
@@ -226,9 +231,11 @@ def train(netG, netD, trainloader, writer):
             # 使用生成器的假样本训练D
             # 生成潜在向量z，标准正态分布
             z = torch.randn(batch_size, num_z, 1, 1)
+            z = z.to(device)
             # 生成器生成假样本
             fake = netG(z)
-            fake_labels = torch.full((batch_size,), fake_label)
+            fake_labels = torch.full((batch_size,), fake_label, dtype=torch.float)
+            fake_labels = fake_labels.to(device)
             # 假样本经过判别器
             fake_outputs = netD(fake.detach()).view(-1)
             # 计算假样本的损失值
@@ -247,7 +254,8 @@ def train(netG, netD, trainloader, writer):
             ############################
             netG.zero_grad()
             # 标签置为真
-            labels = torch.full((batch_size,), real_label)
+            labels = torch.full((batch_size,), real_label, dtype=torch.float)
+            labels = labels.to(device)
             # 再让假样本通过判别器，判别器刚刚执行了优化
             outputs = netD(fake).view(-1)
             # 计算假样本通过判别器损失值，并反向传播梯度
@@ -262,7 +270,7 @@ def train(netG, netD, trainloader, writer):
             if iters % 100 == 0:
                 time_dif = get_time_dif(start_time)
                 msg = '[{0}/{1}][{2:>6}],  Loss_D: {3:>5.2f},  Loss_G: {4:>5.2f}, ' \
-                      'D(x): {5:>5.2} | {6:>5.2} ,  D(G(z)): {7:>5.2}, Time: {10}'
+                      'D(x): {5:>5.2} | {6:>5.2} ,  D(G(z)): {7:>5.2}, Time: {8}'
                 print(msg.format(epoch+1, num_epochs, iters, lossD.item(), lossG.item(),
                                  D_x, D_G_z1, D_G_z2, time_dif))
                 # 可视化训练成果
@@ -299,8 +307,8 @@ def train(netG, netD, trainloader, writer):
         print("Training Finished ...")
         torch.save(netG.state_dict(), netG.save_path)
         torch.save(netD.state_dict(), netD.save_path)
- 
- 
+
+
 if __name__ == '__main__':
     # 设置随机数种子，保证每次结果一样
     seed = 999
@@ -308,54 +316,53 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
- 
-    # 数据集
-    root = './data'
-    batch_size = 128
-    # 训练图像缩放裁剪尺寸
-    image_size = 64
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    # # 训练图像缩放裁剪尺寸
+    # image_size = 16
     # 通道数
-    num_channels = 3
+    num_channels = 1
     # 潜在向量z维度
     num_z = 100
     # 生成器中特征数
-    num_generator_feature = 64
+    num_generator_feature = 128
     # 判别器中的特征数
-    num_disc_feature = 64
+    num_disc_feature = 16
  
-    # 数据集转换
-    transform = transforms.Compose([
-        transforms.Resize(image_size),
-        transforms.CenterCrop(image_size),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    ])
-    # 构造数据集，ImageFolder取子目录的文件作为数据集
-    trainset = datasets.ImageFolder(root=root, transform=transform)
-    # 查看数据集大小
-    print('trainset', len(trainset))
-    # 构造加载器
-    trainloader = DataLoader(dataset=trainset, batch_size=batch_size, shuffle=True)
- 
-    # 加载器输出的张量
-    samples, _ = next(iter(trainloader))
-    print(samples.size())
+    # # 数据集转换
+    # transform = transforms.Compose([
+    #     transforms.Resize(image_size),
+    #     transforms.CenterCrop(image_size),
+    #     transforms.ToTensor(),
+    #     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    # ])
+    # # 构造数据集，ImageFolder取子目录的文件作为数据集
+    # train_set = datasets.ImageFolder(root=root, transform=transform)
+    # # 查看数据集大小
+    # print('train_set', len(train_set))
+    # # 构造加载器
+    # train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
+    # 
+    # # 加载器输出的张量
+    # samples, _ = next(iter(train_loader))
+    # print(samples.size())
  
     # 初始化生成器
-    netG = Generator(num_z, num_generator_feature, num_channels)
+    netG = Generator(num_z, num_generator_feature, num_channels).to(device)
     # 初始化判别器
-    netD = Discriminator(num_disc_feature, num_channels)
+    netD = Discriminator(num_disc_feature, num_channels).to(device)
     # 初始权重，按论文给出的建议
     netG.apply(init_weights)
     netD.apply(init_weights)
- 
+
     from tensorboardX import SummaryWriter
  
     # 记录训练指标，可视化展示
-    log_path = './runs'
+    log_path = './data/generative/runs'
     with SummaryWriter(log_dir=log_path + '/' + time.strftime('%m-%d_%H.%M', time.localtime())) as writer:
         # 开始对抗训练
-        train(netG, netD, trainloader, writer)
+        train(netG, netD, train_loader, writer)
 
 
 
@@ -375,16 +382,14 @@ def visualize(samples, name):
     cv2.imshow(name, imgs)
     cv2.waitKey(0)
 
-
 if __name__ == '__main__':
-    from GANs import Generator
     import os
     import torch
- 
-    netG = Generator(num_z=100, ngf=64, num_channels=3)
-    for i in range(20):
+
+    netG = Generator(num_z=100, ngf=128, num_channels=1)
+    for i in range(11):
         # 加载生成器模型参数
-        iters = i * 500
+        iters = 35000
         save_path = netG.save_path + str(iters)
         if not os.path.exists(save_path):
             break
@@ -393,8 +398,6 @@ if __name__ == '__main__':
         z = torch.randn(64, 100, 1, 1)
         fake = netG(z).detach()
         visualize(fake, str(iters))
-
-
 
 
 

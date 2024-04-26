@@ -359,7 +359,7 @@ mq(zt,adj=12)
 m2=Eccm(zt,maxp=5,maxq=6)
 m2=VARMA(zt,p=2,q=1) ## fit a VARMA(2,1) model
 # 残差检验
-MTSdiag(m2, adj=12)
+MTSdiag(m2, adj=12) # adj=自由度缩减个数=非0参数个数
 # or mq
 r1=m2$residuals
 mq(r1,adj=12) # 系数矩阵的总参数个数
