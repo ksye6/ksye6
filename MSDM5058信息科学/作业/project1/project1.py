@@ -349,7 +349,7 @@ for i in range(len(q_values)):
     fq_q_list1.append(alpha)
 
 plt.figure(figsize=(12, 12))
-plt.plot(q_values, fq_q_list1)
+plt.plot(q_values[:6], (fq_q_list1/q_values)[:6])
 plt.xlabel('q')
 plt.ylabel('f(q)/q')
 plt.title('f(q)/q of ts_MA')
@@ -368,7 +368,7 @@ for i in range(len(q_values)):
     fq_q_list2.append(alpha)
 
 plt.figure(figsize=(12, 12))
-plt.plot(q_values, fq_q_list2)
+plt.plot(q_values, (fq_q_list2/q_values))
 plt.xlabel('q')
 plt.ylabel('f(q)/q')
 plt.title('f(q)/q of ts_MSFT')
@@ -593,11 +593,12 @@ plt.subplots_adjust(hspace=0.5)
 plt.show()
 
 
-from hurst import compute_Hc
+# from hurst import compute_Hc
 # MA
 he1 = []
 for i, imf in enumerate(IMFs_MA):
-    H, c, val = compute_Hc(imf,kind='change')
+    np.random.seed(123)
+    H = nolds.hurst_rs(imf)
     he1.append(H)
 
 orders1 = np.arange(1, len(IMFs_MA) + 1)
@@ -611,7 +612,8 @@ plt.show()
 # MSFT
 he2 = []
 for i, imf in enumerate(IMFs_MSFT):
-    H, c, val = compute_Hc(imf,kind='change')
+    np.random.seed(123)
+    H = nolds.hurst_rs(imf)
     he2.append(H)
 
 orders2 = np.arange(1, len(IMFs_MSFT) + 1)
