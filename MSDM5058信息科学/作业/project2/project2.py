@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
-
+# akshare as ak
+# 获取基金价格ak.fund_open_fund_info_em(symbo]="380005",indicator="单位净值走势")
 ### 1 Data Preprocessing 
 
 # 港铁
@@ -487,18 +488,18 @@ def trade_strategy(g, r=0.001/100):
             shares_to_buy = round(g * M[-1] / S[-1])  # 购买的股票数量, 取整
             N.append(N[-1]+shares_to_buy)  # 更新N(t)
             M.append(M[-1]-shares_to_buy*S[-1]) # 更新M(t)
-            trades.append(('Buy', shares_to_buy, S))  # 记录交易
+            trades.append(('Buy', shares_to_buy, S[-1]))  # 记录交易
         if act == 'Sell':
             shares_to_sell = round(g * N[-1])  # 卖出股票的数量, 取整
             N.append(N[-1]-shares_to_sell)  # 更新N(t)
             M.append(M[-1]+shares_to_sell*S[-1]) # 更新M(t)
-            trades.append(('Sell', shares_to_sell, S))  # 记录交易
+            trades.append(('Sell', shares_to_sell, S[-1]))  # 记录交易
         if act == 'Hold':
-            trades.append(('Hold', 0, S))  # 记录交易
+            trades.append(('Hold', 0, S[-1]))  # 记录交易
         
-        portfolio_values.append(M[-1]+N[-1]*S[-1])  # 更新投资组合价值
         government_values.append(100000 * (1 + r) ** t)  # 更新国债价值
         S.append(S_true.iloc[t])  # 更新实际股价S(t)
+        portfolio_values.append(M[-1]+N[-1]*S[-1])  # 更新投资组合价值
         
         S_past = pd.concat([S_past, S_true.iloc[[t]]]) # 更新历史股价序列
         X_past = np.append(X_past, np.log(S_past.iloc[-1] / S_past.iloc[-2])) # 更新历史股价日收益率序列
@@ -510,16 +511,16 @@ g_aggressive = 0.5  # 激进的贪婪度参数
 g_middle = 0.2
 g_conservative = 0.05  # 保守的贪婪度参数
 
-Vt_aggressive, V0 = trade_strategy(g_aggressive)
-Vt_middle, _ = trade_strategy(g_middle)
-Vt_conservative, _ = trade_strategy(g_conservative)
+Vt_aggressive_1, V0 = trade_strategy(g_aggressive)
+Vt_middle_1, _ = trade_strategy(g_middle)
+Vt_conservative_1, _ = trade_strategy(g_conservative)
 
 days = range(501)
 
 plt.figure(figsize=(12, 12))
-plt.plot(days, Vt_aggressive, label= 'g_a = '+ str(g_aggressive))
-plt.plot(days, Vt_middle, label= 'g_m = '+ str(g_middle))
-plt.plot(days, Vt_conservative, label= 'g_c = ' + str(g_conservative))
+plt.plot(days, Vt_aggressive_1, label= 'g_a = '+ str(g_aggressive))
+plt.plot(days, Vt_middle_1, label= 'g_m = '+ str(g_middle))
+plt.plot(days, Vt_conservative_1, label= 'g_c = ' + str(g_conservative))
 plt.plot(days, V0, label= 'government')
 plt.xlabel('Days')
 plt.ylabel('Portfolio Value')
@@ -528,6 +529,396 @@ plt.legend()
 plt.show()
 
 
+### 8 A Portfolio with Two Stocks
+# p0 is around 0.38 in section 2
+
+plt.figure(figsize=(12, 12))
+plt.plot(S2_future[:500])
+plt.xlabel("Time")
+plt.ylabel("Stock Price")
+plt.title("Stock Price of 0066.HK")
+plt.show()
+
+def trade_strategy_2(g, r=0.001/100, p0 = 0.38):
+    M = [100000]  # 初始资金
+    S1 = [S1_past.iloc[-1]]  # 初始股票1价格
+    S2 = [S2_past.iloc[-1]]  # 初始股票2价格
+    N1 = [round(100000*p0/S1[0])]  # 初始股票1数量
+    N2 = [round(100000*(1-p0)/S2[0])]  # 初始股票2数量
+    
+    portfolio_values = [100000]  # 投资组合价值列表
+    government_values = [100000] # 国债价值变化列表
+    trades = []  # 交易记录列表
+    
+    # 无需预测S2
+    S1_past_ = S1_past.copy()
+    S1_true_ = S1_future.copy()[:500]
+    X1_past_ = X1_past.copy()
+    
+    S2_true_ = S2_future.copy()[:500]
+    
+    for t in range(0, len(S1_true_)):
+        
+        Y1_past = digitize_X(X1_past_, epsilon)
+        
+        y1_star = compute_y_star(X1_past_, Y1_past)  # 预测下一天的分类
+        today1 = digitize_X([X1_past_[-1]], epsilon) # 今天的分类
+        _, _, macd1 = talib.MACD(S1_past_, fastperiod=12, slowperiod=26, signalperiod=9)
+        macd1_new = macd1.iloc[-1] # 今天的macd值
+        delta1 = macd1.iloc[-1]-macd1.iloc[-2] # 今天对比昨天的差值
+        
+        act1 = action(today1,y1_star,macd1_new,delta1) # 决定买还是卖还是持有
+        
+        # 根据预测结果决定操作
+        if act1 == 'Buy':
+            shares_to_sell = round(g * N2[-1])  # 卖出N2的数量, 取整
+            tent_money = shares_to_sell * S2[-1] # 中转价格
+            shares_to_buy = round(tent_money / S1[-1]) # 买入N1的数量, 取整
+            N1.append(N1[-1]+shares_to_buy)  # 更新N1(t)
+            N2.append(N2[-1]-shares_to_sell)  # 更新N2(t)
+            trades.append(('Buy', shares_to_buy, S1[-1]))  # 记录S1的交易
+        if act1 == 'Sell':
+            shares_to_sell = round(g * N1[-1])  # 卖出N1的数量, 取整
+            tent_money = shares_to_sell * S1[-1] # 中转价格
+            shares_to_buy = round(tent_money / S2[-1]) # 买入N2的数量, 取整
+            N1.append(N1[-1]-shares_to_sell)  # 更新N1(t)
+            N2.append(N2[-1]+shares_to_buy)  # 更新N2(t)
+            trades.append(('Sell', shares_to_sell, S1[-1]))  # 记录S1的交易
+        if act1 == 'Hold':
+            trades.append(('Hold', 0, S1[-1]))  # 记录交易
+        
+        government_values.append(100000 * (1 + r) ** t)  # 更新国债价值
+        S1.append(S1_true_.iloc[t])  # 更新实际股价S1(t)
+        S2.append(S2_true_.iloc[t])  # 更新实际股价S2(t)
+        portfolio_values.append(N1[-1]*S1[-1]+N2[-1]*S2[-1])  # 更新投资组合价值
+        
+        S1_past_ = pd.concat([S1_past_, S1_true_.iloc[[t]]]) # 更新历史股价S1序列
+        X1_past_ = np.append(X1_past_, np.log(S1_past_.iloc[-1] / S1_past_.iloc[-2])) # 更新历史股价日收益率X1序列
+    
+    return portfolio_values, government_values
+
+g_aggressive = 0.5  # 激进的贪婪度参数
+# g_middle = 0.2
+g_conservative = 0.05  # 保守的贪婪度参数
+
+Vt_aggressive, V0 = trade_strategy_2(g_aggressive)
+# Vt_middle, _ = trade_strategy(g_middle)
+Vt_conservative, _ = trade_strategy_2(g_conservative)
+
+days = range(501)
+
+plt.figure(figsize=(12, 12))
+plt.plot(days, Vt_aggressive, label= 'g_a = '+ str(g_aggressive))
+# plt.plot(days, Vt_middle, label= 'g_m = '+ str(g_middle))
+plt.plot(days, Vt_conservative, label= 'g_c = ' + str(g_conservative))
+plt.plot(days, V0, label= 'government')
+plt.xlabel('Days')
+plt.ylabel('Portfolio Value')
+plt.title('Portfolio Value over Time')
+plt.legend()
+plt.show()
+# 激进的策略更好，可能原因是S2一直下跌，太保守就会一直套牢
+
+# 为了符合题意更为平稳的股票,我们把它设置成16.4附近波动,上涨看看
+S2_future = pd.Series(index=S2_future.index)
+previous_value =16.4  # 初始值
+np.random.seed(17)
+for date in S2_future.index:
+    random_value = np.random.uniform(previous_value - 0.2, previous_value + 0.2)
+    random_value = max(12, min(20, random_value))  # 确保随机值在范围内
+    S2_future[date] = random_value
+    previous_value = random_value
+
+plt.figure(figsize=(12, 12))
+plt.plot(S2_future[:500])
+plt.xlabel("Time")
+plt.ylabel("Stock Price")
+plt.title("Stock Price of 0066.HK")
+plt.show()
+
+Vt_aggressive_2, V0 = trade_strategy_2(g_aggressive)
+# Vt_middle_2, _ = trade_strategy(g_middle)
+Vt_conservative_2, _ = trade_strategy_2(g_conservative)
+
+days = range(501)
+
+plt.figure(figsize=(12, 12))
+plt.plot(days, Vt_aggressive_2, label= 'g_a = '+ str(g_aggressive))
+# plt.plot(days, Vt_middle_2, label= 'g_m = '+ str(g_middle))
+plt.plot(days, Vt_conservative_2, label= 'g_c = ' + str(g_conservative))
+plt.plot(days, V0, label= 'government')
+plt.xlabel('Days')
+plt.ylabel('Portfolio Value')
+plt.title('Portfolio Value over Time')
+plt.legend()
+plt.show()
+
+# 发现这个时候二者差不多
+
+## 8.1 Efficient Frontier
+# 还原S2_future
+S2_future = S2[int(len(S2)/4*3)+1:]
+
+def trade_strategy_2_1(g, r=0.001/100, p0 = 0.38):
+    M = [100000]  # 初始资金
+    S1 = [S1_past.iloc[-1]]  # 初始股票1价格
+    S2 = [S2_past.iloc[-1]]  # 初始股票2价格
+    N1 = [round(100000*p0/S1[0])]  # 初始股票1数量
+    N2 = [round(100000*(1-p0)/S2[0])]  # 初始股票2数量
+    P0t= [p0]
+    Pt = [p0]
+    
+    portfolio_values = [100000]  # 投资组合价值列表
+    government_values = [100000] # 国债价值变化列表
+    trades = []  # 交易记录列表
+    
+    # 无需预测S2
+    S1_past_ = S1_past.copy()
+    S1_true_ = S1_future.copy()[:500]
+    X1_past_ = X1_past.copy()
+    
+    S2_true_ = S2_future.copy()[:500]
+    S2_past_ = S2_past.copy()
+    X2_past_ = X2_past.copy()
+    
+    for t in range(0, len(S1_true_)):
+        
+        Y1_past = digitize_X(X1_past_, epsilon)
+        
+        y1_star = compute_y_star(X1_past_, Y1_past)  # 预测下一天的分类
+        today1 = digitize_X([X1_past_[-1]], epsilon) # 今天的分类
+        _, _, macd1 = talib.MACD(S1_past_, fastperiod=12, slowperiod=26, signalperiod=9)
+        macd1_new = macd1.iloc[-1] # 今天的macd值
+        delta1 = macd1.iloc[-1]-macd1.iloc[-2] # 今天对比昨天的差值
+        
+        act1 = action(today1,y1_star,macd1_new,delta1) # 决定买还是卖还是持有
+        
+        # 根据预测结果决定操作
+        if act1 == 'Buy':
+            shares_to_sell = round(g * N2[-1])  # 卖出N2的数量, 取整
+            tent_money = shares_to_sell * S2[-1] # 中转价格
+            shares_to_buy = round(tent_money / S1[-1]) # 买入N1的数量, 取整
+            N1.append(N1[-1]+shares_to_buy)  # 更新N1(t)
+            N2.append(N2[-1]-shares_to_sell)  # 更新N2(t)
+            trades.append(('Buy', shares_to_buy, S1[-1]))  # 记录S1的交易
+        if act1 == 'Sell':
+            shares_to_sell = round(g * N1[-1])  # 卖出N1的数量, 取整
+            tent_money = shares_to_sell * S1[-1] # 中转价格
+            shares_to_buy = round(tent_money / S2[-1]) # 买入N2的数量, 取整
+            N1.append(N1[-1]-shares_to_sell)  # 更新N1(t)
+            N2.append(N2[-1]+shares_to_buy)  # 更新N2(t)
+            trades.append(('Sell', shares_to_sell, S1[-1]))  # 记录S1的交易
+        if act1 == 'Hold':
+            trades.append(('Hold', 0, S1[-1]))  # 记录交易
+        
+        government_values.append(100000 * (1 + r) ** t)  # 更新国债价值
+        S1.append(S1_true_.iloc[t])  # 更新实际股价S1(t)
+        S2.append(S2_true_.iloc[t])  # 更新实际股价S2(t)
+        portfolio_values.append(N1[-1]*S1[-1]+N2[-1]*S2[-1])  # 更新投资组合价值
+        Pt.append(N1[-1]*S1[-1]/portfolio_values[-1]) # 更新Pt
+        
+        S1_past_ = pd.concat([S1_past_, S1_true_.iloc[[t]]]) # 更新历史股价S1序列
+        X1_past_ = np.append(X1_past_, np.log(S1_past_.iloc[-1] / S1_past_.iloc[-2])) # 更新历史股价日收益率X1序列
+        S2_past_ = pd.concat([S2_past_, S2_true_.iloc[[t]]]) # 更新历史股价S2序列
+        X2_past_ = np.append(X2_past_, np.log(S2_past_.iloc[-1] / S2_past_.iloc[-2])) # 更新历史股价日收益率X2序列
+        
+        X_returns = pd.concat([pd.Series(X1_past_, name='港铁'),pd.Series(X2_past_, name='载通')],axis=1)
+        mean_return = X_returns.mean()
+        var_return = X_returns.var()
+        cov_return =  X_returns.cov()
+        p0new = (var_return.iloc[1]-cov_return.iloc[0,1])/(var_return.iloc[0]+var_return.iloc[1]-2*cov_return.iloc[0,1])
+        P0t.append(p0new)  # 更新P0
+    
+    return P0t, Pt
+
+P0t, Pt = trade_strategy_2_1(0.2)
+
+days = range(501)
+
+plt.figure(figsize=(12, 12))
+plt.plot(days, P0t, label= 'P0t')
+plt.plot(days, Pt, label= 'Pt')
+plt.xlabel('Days')
+plt.ylabel('Value')
+plt.title('P and P0 over Time (g=0.2)')
+plt.legend()
+plt.show()
+
+# Not too much.
+
+## Next step
+import sympy as sp
+from sympy import *
+
+def trade_strategy_2_2(g, r=0.001/100, p0 = 0.38):
+    M = [100000]  # 初始资金
+    S1 = [S1_past.iloc[-1]]  # 初始股票1价格
+    S2 = [S2_past.iloc[-1]]  # 初始股票2价格
+    N1 = [round(100000*p0/S1[0])]  # 初始股票1数量
+    N2 = [round(100000*(1-p0)/S2[0])]  # 初始股票2数量
+    P0t= [p0]
+    Pt = [p0]
+    result = []
+    
+    portfolio_values = [100000]  # 投资组合价值列表
+    government_values = [100000] # 国债价值变化列表
+    trades = []  # 交易记录列表
+    
+    # 无需预测S2
+    S1_past_ = S1_past.copy()
+    S1_true_ = S1_future.copy()[:500]
+    X1_past_ = X1_past.copy()
+    
+    S2_true_ = S2_future.copy()[:500]
+    S2_past_ = S2_past.copy()
+    X2_past_ = X2_past.copy()
+
+    X_returns = pd.concat([pd.Series(X1_past_, name='港铁'),pd.Series(X2_past_, name='载通')],axis=1)
+    mean_return = [X_returns.mean()]
+    var_return = [X_returns.var()]
+    cov_return =  [X_returns.cov()]
+    sigma0 = p0**2*var_return[-1].iloc[0]+(1-p0)**2*var_return[-1].iloc[1]+2*p0*(1-p0)*cov_return[-1].iloc[0,1]
+    sigma1 = X1_past_.var()
+    sigmat = [sigma0]
+
+    # 先进行一天
+    Y1_past = digitize_X(X1_past_, epsilon)
+    
+    y1_star = compute_y_star(X1_past_, Y1_past)  # 预测下一天的分类
+    today1 = digitize_X([X1_past_[-1]], epsilon) # 今天的分类
+    _, _, macd1 = talib.MACD(S1_past_, fastperiod=12, slowperiod=26, signalperiod=9)
+    macd1_new = macd1.iloc[-1] # 今天的macd值
+    delta1 = macd1.iloc[-1]-macd1.iloc[-2] # 今天对比昨天的差值
+    
+    act1 = action(today1,y1_star,macd1_new,delta1) # 决定买还是卖还是持有
+    
+    # 根据预测结果决定操作
+    if act1 == 'Buy':
+        shares_to_sell = round(g * N2[-1])  # 卖出N2的数量, 取整
+        tent_money = shares_to_sell * S2[-1] # 中转价格
+        shares_to_buy = round(tent_money / S1[-1]) # 买入N1的数量, 取整
+        N1.append(N1[-1]+shares_to_buy)  # 更新N1(t)
+        N2.append(N2[-1]-shares_to_sell)  # 更新N2(t)
+        trades.append(('Buy', shares_to_buy, S1[-1]))  # 记录S1的交易
+    if act1 == 'Sell':
+        shares_to_sell = round(g * N1[-1])  # 卖出N1的数量, 取整
+        tent_money = shares_to_sell * S1[-1] # 中转价格
+        shares_to_buy = round(tent_money / S2[-1]) # 买入N2的数量, 取整
+        N1.append(N1[-1]-shares_to_sell)  # 更新N1(t)
+        N2.append(N2[-1]+shares_to_buy)  # 更新N2(t)
+        trades.append(('Sell', shares_to_sell, S1[-1]))  # 记录S1的交易
+    if act1 == 'Hold':
+        trades.append(('Hold', 0, S1[-1]))  # 记录交易
+    
+    government_values.append(100000 * (1 + r) ** 0)  # 更新国债价值
+    S1.append(S1_true_.iloc[0])  # 更新实际股价S1(t)
+    S2.append(S2_true_.iloc[0])  # 更新实际股价S2(t)
+    portfolio_values.append(N1[-1]*S1[-1]+N2[-1]*S2[-1])  # 更新投资组合价值
+    Pt.append(N1[-1]*S1[-1]/portfolio_values[-1]) # 更新Pt
+    
+    S1_past_ = pd.concat([S1_past_, S1_true_.iloc[[0]]]) # 更新历史股价S1序列
+    X1_past_ = np.append(X1_past_, np.log(S1_past_.iloc[-1] / S1_past_.iloc[-2])) # 更新历史股价日收益率X1序列
+    S2_past_ = pd.concat([S2_past_, S2_true_.iloc[[0]]]) # 更新历史股价S2序列
+    X2_past_ = np.append(X2_past_, np.log(S2_past_.iloc[-1] / S2_past_.iloc[-2])) # 更新历史股价日收益率X2序列
+    
+    X_returns = pd.concat([pd.Series(X1_past_, name='港铁'),pd.Series(X2_past_, name='载通')],axis=1)
+    mean_return.append(X_returns.mean())
+    var_return.append(X_returns.var())
+    cov_return.append(X_returns.cov())
+    p0new = (var_return[-1].iloc[1]-cov_return[-1].iloc[0,1])/(var_return[-1].iloc[0]+var_return[-1].iloc[1]-2*cov_return[-1].iloc[0,1])
+    P0t.append(p0new)  # 更新P0
+    
+    sigmat.append(Pt[-1]**2*var_return[-1].iloc[0]+(1-Pt[-1])**2*var_return[-1].iloc[1]+2*Pt[-1]*(1-Pt[-1])*cov_return[-1].iloc[0,1]) # 更新sigmat
+
+    # 后续根据sigmat选择ni
+    for t in range(1, len(S1_true_)):
+        Y1_past = digitize_X(X1_past_, epsilon)
+        
+        y1_star = compute_y_star(X1_past_, Y1_past)  # 预测下一天的分类
+        today1 = digitize_X([X1_past_[-1]], epsilon) # 今天的分类
+        _, _, macd1 = talib.MACD(S1_past_, fastperiod=12, slowperiod=26, signalperiod=9)
+        macd1_new = macd1.iloc[-1] # 今天的macd值
+        delta1 = macd1.iloc[-1]-macd1.iloc[-2] # 今天对比昨天的差值
+        
+        act1 = action(today1,y1_star,macd1_new,delta1) # 决定买还是卖还是持有
+        
+        if act1 == 'Buy':
+            sig = sigmat[-1]+g*(sigma1-sigmat[-1])
+        if act1 == 'Sell':
+            sig = sigmat[-1]-g*(sigmat[-1]-sigma0)
+        
+        a = sp.Symbol('a')
+        # 定义方程
+        equation = sp.Eq(sig, a**2 * var_return[-1].iloc[0] + (1 - a)**2 * var_return[-1].iloc[1] + 2 * a * (1 - a) * cov_return[-1].iloc[0,1])
+        # 解方程
+        solutions = sp.solve(equation, a)
+        filter_ = [x for x in solutions if (not isinstance(x, sp.core.mul.Mul) and not isinstance(x, sp.core.add.Add))]
+        filter_ = [x for x in filter_ if P0t[-1] <= x <= 1]
+
+        if len(filter_)!=0:
+            result.append(filter_)
+        
+        finalN1 = round(result[-1][-1]*portfolio_values[-1]/S1[-1])
+        finalN2 = round((1-result[-1][-1])*portfolio_values[-1]/S2[-1])
+
+        # 根据预测结果决定操作
+        if N1[-1] < finalN1:
+            shares_to_buy = finalN1 - N1[-1] # 买入N1的数量, 取整
+            N1.append(finalN1)  # 更新N1(t)
+            N2.append(finalN2)  # 更新N2(t)
+            trades.append(('Buy', shares_to_buy, S1[-1]))  # 记录S1的交易
+        if N1[-1] > finalN1:
+            shares_to_sell = N1[-1] - finalN1  # 卖出N1的数量, 取整
+            N1.append(finalN1)  # 更新N1(t)
+            N2.append(finalN2)  # 更新N2(t)
+            trades.append(('Sell', shares_to_sell, S1[-1]))  # 记录S1的交易
+        if act1 == 'Hold':
+            trades.append(('Hold', 0, S1[-1]))  # 记录交易
+
+        government_values.append(100000 * (1 + r) ** t)  # 更新国债价值
+        S1.append(S1_true_.iloc[t])  # 更新实际股价S1(t)
+        S2.append(S2_true_.iloc[t])  # 更新实际股价S2(t)
+        portfolio_values.append(N1[-1]*S1[-1]+N2[-1]*S2[-1])  # 更新投资组合价值
+        Pt.append(result[-1][-1]) # 更新Pt
+
+        S1_past_ = pd.concat([S1_past_, S1_true_.iloc[[t]]]) # 更新历史股价S1序列
+        X1_past_ = np.append(X1_past_, np.log(S1_past_.iloc[-1] / S1_past_.iloc[-2])) # 更新历史股价日收益率X1序列
+        S2_past_ = pd.concat([S2_past_, S2_true_.iloc[[t]]]) # 更新历史股价S2序列
+        X2_past_ = np.append(X2_past_, np.log(S2_past_.iloc[-1] / S2_past_.iloc[-2])) # 更新历史股价日收益率X2序列
+
+        X_returns = pd.concat([pd.Series(X1_past_, name='港铁'),pd.Series(X2_past_, name='载通')],axis=1)
+        mean_return.append(X_returns.mean())
+        var_return.append(X_returns.var())
+        cov_return.append(X_returns.cov())
+        p0new = (var_return[-1].iloc[1]-cov_return[-1].iloc[0,1])/(var_return[-1].iloc[0]+var_return[-1].iloc[1]-2*cov_return[-1].iloc[0,1])
+        P0t.append(p0new)  # 更新P0
+
+        sigmat.append(Pt[-1]**2*var_return[-1].iloc[0]+(1-Pt[-1])**2*var_return[-1].iloc[1]+2*Pt[-1]*(1-Pt[-1])*cov_return[-1].iloc[0,1]) # 更新sigmat
+
+    return portfolio_values, government_values
+
+
+Vt_aggressive, V0 = trade_strategy_2_2(g_aggressive)
+# Vt_middle, _ = trade_strategy(g_middle)
+Vt_conservative, _ = trade_strategy_2_2(g_conservative)
+
+days = range(501)
+
+plt.figure(figsize=(12, 12))
+plt.plot(days, Vt_aggressive, label= 'g_a = '+ str(g_aggressive))
+# plt.plot(days, Vt_middle, label= 'g_m = '+ str(g_middle))
+plt.plot(days, Vt_conservative, label= 'g_c = ' + str(g_conservative))
+plt.plot(days, V0, label= 'government')
+plt.xlabel('Days')
+plt.ylabel('Portfolio Value')
+plt.title('Portfolio Value over Time')
+plt.legend()
+plt.show()
+
+# 确实稳健了很多
+
+
+### 9 A Portfolio with Two Stocks and Money
 
 
 
