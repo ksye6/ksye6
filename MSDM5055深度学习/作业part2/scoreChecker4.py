@@ -62,7 +62,7 @@ class Hypercube(Lattice):
 def energy(batch, adjEle=adjEle):
     lattice = Hypercube(16, 2)
     adjMask = torch.from_numpy(lattice.Adj).bool()
-    adjEle = torch.from_numpy(adjEle)
+    adjEle = torch.from_numpy(adjEle).long()
 
     adj = torch.zeros(adjMask.shape, dtype=torch.long)
     adj = adj.masked_scatter(adjMask, adjEle)

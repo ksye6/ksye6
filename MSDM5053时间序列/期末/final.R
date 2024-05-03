@@ -32,6 +32,7 @@ plot(TI)
 
 
 ############################################# KC
+library(forecast)
 # 差分+平稳性检验
 KC_dr = diff(KC) / lag(KC)
 KC_dr = na.omit(KC_dr)
@@ -40,6 +41,7 @@ plot(KC_dr)
 ndiffs(KC_dr) # 差分0次
 length(KC_dr)
 
+library(tseries)
 pp.test(KC_dr) # < 0.05 则平稳
 
 # 白噪声检验
@@ -59,6 +61,7 @@ for( i in c(2,5,9,11) ){
 # ARMA模型识别
 acf(KC_dr)
 pacf(KC_dr)
+library(TSA)
 eacf(KC_dr)
 auto.arima(KC_dr,trace = T)
 
@@ -93,6 +96,8 @@ pt(t,df_t,lower.tail = F)
 # arch.test(tent, output = T) # 上半残差序列及平方序列的散点图,下半PQ检验和LM检验的P值,p小拒绝原假设,具备异方差性,考虑低阶GARCH
 
 # ARMA-EGARCH 拟合
+library(fGarch)
+library(rugarch)
 KC_spec=ugarchspec(variance.model=list(model="eGARCH",garchOrder = c(1, 1)),
                    mean.model=list(armaOrder=c(0,1),include.mean = TRUE),
                    distribution.model = "sstd")
@@ -136,13 +141,11 @@ MTR_dr = diff(MTR) / lag(MTR)
 MTR_dr = na.omit(MTR_dr)
 plot(MTR_dr)
 
-library(forecast)
 ndiffs(MTR_dr) # 差分一次
 MTR_dr_1 = diff(MTR_dr)
 MTR_dr_1 = na.omit(MTR_dr_1)
 length(MTR_dr_1)
 
-library(tseries)
 pp.test(MTR_dr_1) # < 0.05 则平稳
 
 # 白噪声检验
@@ -162,7 +165,6 @@ for( i in c(2,5,9,11) ){
 # ARMA模型识别
 acf(MTR_dr_1)
 pacf(MTR_dr_1)
-library(TSA)
 eacf(MTR_dr_1)
 
 Arima(MTR_dr_1,order = c(0,0,1), include.drift = T)$aic
@@ -193,8 +195,6 @@ pt(t,df_t,lower.tail = F)
 # arch.test(tent, output = T) # 上半残差序列及平方序列的散点图,下半PQ检验和LM检验的P值,p小拒绝原假设,具备异方差性,考虑低阶GARCH
 
 # ARMA-EGARCH 拟合
-library(fGarch)
-library(rugarch)
 MTR_spec=ugarchspec(variance.model=list(model="eGARCH",garchOrder = c(1, 1)),
                    mean.model=list(armaOrder=c(0,1),include.mean = TRUE),
                    distribution.model = "sstd")
