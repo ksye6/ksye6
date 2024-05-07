@@ -48,13 +48,14 @@ def tent(R, R_pre, m):
 def romberg_integration():
     a = -math.pi / 2
     b = math.pi / 2
-    n = 1
+    n = 200
     h = (b-a)/n
     fit = 0
     R_matrix = []
     for i in range(n):
         if i%2 == 1:
             fit += f(a+i*h)
+    
     pre_fit = fit
     fit *= h
     R_matrix.append([fit])
@@ -77,7 +78,7 @@ def romberg_integration():
         R_matrix.append([fit])
         while len(R_matrix[-1]) < len(R_matrix):
             R_matrix[-1].append(tent(R_matrix[-1][-1], R_matrix[-2][len(R_matrix[-1])-1], len(R_matrix[-1])))
-        return R_mat[-1][-1]*2
+        return R_matrix[-1][-1]*2
 
 romberg_integration()
 
@@ -175,8 +176,8 @@ def metropolis_algorithm(n, step_size):
     count = 0
 
     for _ in range(n):
-        y = x + step_size * np.random.randn(4)  # Generate proposal point
-        pa = min(1, f(y) / f(x))  # Compute acceptance probability
+        y = x + step_size * np.random.randn(4)
+        pa = min(1, f(y) / f(x))
 
         if np.random.rand() < pa:
             x = y

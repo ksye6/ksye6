@@ -28,7 +28,7 @@ S1_future = S1[int(len(S1)/4*3)+1:]
 
 X1_past = np.log(np.array(S1_past[1:]) / np.array(S1_past[:-1]))
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(S1_past)
 plt.xlabel("Time")
 plt.ylabel("Stock Price")
@@ -36,7 +36,7 @@ plt.title("Stock Price of 0066.HK")
 plt.show()
 ```
 ```{python}
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(X1_past)
 plt.xlabel("Time")
 plt.ylabel("Daily Returns")
@@ -55,7 +55,7 @@ S2_future = S2[int(len(S2)/4*3)+1:]
 
 X2_past = np.log(np.array(S2_past[1:]) / np.array(S2_past[:-1]))
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(S2_past)
 plt.xlabel("Time")
 plt.ylabel("Stock Price")
@@ -63,7 +63,7 @@ plt.title("Stock Price of 0062.HK")
 plt.show()
 ```
 ```{python}
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(X2_past)
 plt.xlabel("Time")
 plt.ylabel("Daily Returns")
@@ -104,21 +104,21 @@ def plot_all(h_values):
             S0_values.append(S0)
             y0_values.append(y0)
         
-        plt.figure(figsize=(12, 12))
+        plt.figure(figsize=(6, 6),dpi=300)
         plt.plot(t_range, p0_values)
         plt.xlabel("t")
         plt.ylabel("P0(t, h)")
         plt.title(f"P0(t, h) for h = {h}")
         plt.show()
         
-        plt.figure(figsize=(12, 12))
+        plt.figure(figsize=(6, 6),dpi=300)
         plt.plot(t_range, S0_values)
         plt.xlabel("t")
         plt.ylabel("S0(t, h)")
         plt.title(f"S0(t, h) for h = {h}")
         plt.show()
         
-        plt.figure(figsize=(12, 12))
+        plt.figure(figsize=(6, 6),dpi=300)
         plt.plot(t_range, y0_values)
         plt.xlabel("t")
         plt.ylabel("y0(t, h)")
@@ -146,7 +146,7 @@ EMA30=talib.EMA(S1_past,timeperiod=30)
 EMA100=talib.EMA(S1_past,timeperiod=100)
 EMA300=talib.EMA(S1_past,timeperiod=300)
 
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(S1_past.index,EMA30,label='EMA30')
 plt.plot(S1_past.index,EMA100,label='EMA100')
 plt.plot(S1_past.index,EMA300,label='EMA300')
@@ -160,7 +160,7 @@ SMA30=talib.SMA(S1_past,timeperiod=30)
 SMA100=talib.SMA(S1_past,timeperiod=100)
 SMA300=talib.SMA(S1_past,timeperiod=300)
 
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(S1_past.index,SMA30,label='SMA30')
 plt.plot(S1_past.index,SMA100,label='SMA100')
 plt.plot(S1_past.index,SMA300,label='SMA300')
@@ -169,7 +169,7 @@ plt.legend()
 plt.show()
 ```
 ```{python}
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(S1_past.index,SMA30,label='SMA30')
 plt.plot(S1_past.index,EMA30,label='EMA30')
 plt.title("Comparison between EMA and SMA (w = 30)")
@@ -177,7 +177,7 @@ plt.legend()
 plt.show()
 ```
 ```{python}
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(S1_past.index,SMA100,label='SMA100')
 plt.plot(S1_past.index,EMA100,label='EMA100')
 plt.title("Comparison between EMA and SMA (w = 100)")
@@ -185,7 +185,7 @@ plt.legend()
 plt.show()
 ```
 ```{python}
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(S1_past.index,SMA300,label='SMA300')
 plt.plot(S1_past.index,EMA300,label='EMA300')
 plt.title("Comparison between EMA and SMA (w = 300)")
@@ -199,7 +199,7 @@ diff, dea, macd = talib.MACD(S1_past[-300:], fastperiod=12, slowperiod=26, signa
 pos_macd = np.where(macd > 0, macd, 0)
 neg_macd = np.where(macd < 0, macd, 0)
 
-fig, axs = plt.subplots(2, 1, figsize=(12, 12), sharex=True)
+fig, axs = plt.subplots(2, 1, figsize=(6, 6), dpi=300,sharex=True)
 
 axs[0].plot(S1_past.index[-300:], S1_past[-300:], label='0066.HK')
 axs[0].legend()
@@ -257,7 +257,7 @@ normal_cdf_values = norm.cdf(xranges, X1_mu, scale=np.sqrt(X1_sigma_squared))
 logistic_cdf_values = 1 / (1 + np.exp(-X1_b * (xranges - X1_star))) # 最优拟合
 # logistic_cdf_values = logistic.cdf(xranges, loc=np.mean(X1_past), scale=np.std(X1_past)) 库自带的函数偏差较大
 
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(xranges, normal_cdf_values, label='G(x) - Normal CDF')
 plt.plot(xranges, logistic_cdf_values, label='L(x) - Logistic CDF')
 plt.xlabel('x')
@@ -300,7 +300,7 @@ def conditional_cdf(X, Y, x, y, assump = True):
 xranges = np.linspace(-0.05, 0.05, 100)
 
 ## 绘制 conditional CDF
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(6, 6),dpi=300)
 for y in ['D', 'U', 'H']:
     cdf_values = [conditional_cdf(X1_past, Y_digi, x, y) for x in xranges]
     plt.plot(xranges, cdf_values, label=f'CDF[X(t) | Y(t+1) = {y}]')
@@ -312,7 +312,7 @@ plt.title(f'Conditional CDF of X given Y with no assumption')
 plt.show()
 ```
 ```{python}
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(6, 6),dpi=300)
 for y in ['D', 'U', 'H']:
     cdf_values = [conditional_cdf(X1_past, Y_digi, x, y,'Normal') for x in xranges]
     plt.plot(xranges, cdf_values, label=f'CDF[X(t) | Y(t+1) = {y}]')
@@ -324,7 +324,7 @@ plt.title(f'Conditional CDF of X given Y with Normal assumption')
 plt.show()
 ```
 ```{python}
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(6, 6),dpi=300)
 for y in ['D', 'U', 'H']:
     cdf_values = [conditional_cdf(X1_past, Y_digi, x, y,'Logistic') for x in xranges]
     plt.plot(xranges, cdf_values, label=f'CDF[X(t) | Y(t+1) = {y}]')
@@ -342,7 +342,7 @@ def conditional_pdf(X, Y, x, y):
     return norm.pdf(x, loc=np.mean(filtered_X), scale=np.std(filtered_X))
     # return logistic.pdf(x, loc=np.mean(filtered_X), scale=np.std(filtered_X))
 
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(6, 6),dpi=300)
 for y in ['D', 'U', 'H']:
     pdf_values = [conditional_pdf(X1_past, Y_digi, x, y) for x in xranges]
     plt.plot(xranges, pdf_values, label=f'PDF[X(t) | Y(t+1) = {y}]')
@@ -399,7 +399,7 @@ diff_value = [sorted_X[i] for i in diff_index]
 diff_type = [sorted_Y[i] for i in diff_index]
 ```
 ```{python}
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(sorted_X, sorted_Y,color='red',alpha=0.2,linestyle='--')
 plt.scatter(sorted_X, sorted_Y,s=20)
 plt.scatter(diff_value, diff_type, marker='*', color='red', s=100)
@@ -499,7 +499,7 @@ set(RPF_result).intersection(set(gm_result)) # 8 rules
 ### 7 A Portfolio with One Stock and Money
 # 近几年股价太烂肯定亏，我们只用前一半的数据，即500项
 # 前一半的股价图
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(S1_future[:500])
 plt.xlabel("Time")
 plt.ylabel("Stock Price")
@@ -593,7 +593,7 @@ Vt_conservative_1, _ = trade_strategy(g_conservative)
 ```{python}
 days = range(501)
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(days, Vt_aggressive_1, label= 'g_a = '+ str(g_aggressive))
 plt.plot(days, Vt_middle_1, label= 'g_m = '+ str(g_middle))
 plt.plot(days, Vt_conservative_1, label= 'g_c = ' + str(g_conservative))
@@ -612,7 +612,7 @@ plt.show()
 ### 8 A Portfolio with Two Stocks
 # p0 is around 0.38 in section 2
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(S2_future[:500])
 plt.xlabel("Time")
 plt.ylabel("Stock Price")
@@ -691,7 +691,7 @@ Vt_conservative_2, _ = trade_strategy_2(g_conservative)
 ```{python}
 days = range(501)
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(days, Vt_aggressive_2, label= 'g_a = '+ str(g_aggressive))
 # plt.plot(days, Vt_middle_2, label= 'g_m = '+ str(g_middle))
 plt.plot(days, Vt_conservative_2, label= 'g_c = ' + str(g_conservative))
@@ -714,7 +714,7 @@ for date in S2_future.index:
     S2_future[date] = random_value
     previous_value = random_value
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(S2_future[:500])
 plt.xlabel("Time")
 plt.ylabel("Stock Price")
@@ -729,7 +729,7 @@ Vt_conservative_2, _ = trade_strategy_2(g_conservative)
 ```{python}
 days = range(501)
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(days, Vt_aggressive_2, label= 'g_a = '+ str(g_aggressive))
 # plt.plot(days, Vt_middle_2, label= 'g_m = '+ str(g_middle))
 plt.plot(days, Vt_conservative_2, label= 'g_c = ' + str(g_conservative))
@@ -826,7 +826,7 @@ P0t, Pt = trade_strategy_2_1(0.2)
 ```{python}
 days = range(501)
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(days, P0t, label= 'P0t')
 plt.plot(days, Pt, label= 'Pt')
 plt.xlabel('Days')
@@ -997,7 +997,7 @@ Vt_conservative, _ = trade_strategy_2_2(g_conservative)
 ```{python}
 days = range(501)
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(days, Vt_aggressive, label= 'g_a = '+ str(g_aggressive))
 # plt.plot(days, Vt_middle, label= 'g_m = '+ str(g_middle))
 plt.plot(days, Vt_conservative, label= 'g_c = ' + str(g_conservative))
@@ -1233,7 +1233,7 @@ Vt_conservative_3, _ = trade_strategy_3(g_conservative)
 ```{python}
 days = range(501)
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(days, Vt_aggressive_3, label= 'g_a = '+ str(g_aggressive))
 plt.plot(days, Vt_middle_3, label= 'g_m = '+ str(g_middle))
 plt.plot(days, Vt_conservative_3, label= 'g_c = ' + str(g_conservative))
@@ -1353,7 +1353,7 @@ Vt_conservative_4, _ = trade_strategy_4(g_conservative)
 ```{python}
 days = range(501)
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(days, Vt_aggressive_4, label= 'g_a = '+ str(g_aggressive))
 plt.plot(days, Vt_middle_4, label= 'g_m = '+ str(g_middle))
 plt.plot(days, Vt_conservative_4, label= 'g_c = ' + str(g_conservative))
@@ -1537,7 +1537,7 @@ Vt_conservative_5, _ = trade_strategy_5(g_conservative)
 ```{python}
 days = range(501)
 
-plt.figure(figsize=(12, 12))
+plt.figure(figsize=(6, 6),dpi=300)
 plt.plot(days, Vt_aggressive_5, label= 'g_a = '+ str(g_aggressive))
 plt.plot(days, Vt_middle_5, label= 'g_m = '+ str(g_middle))
 plt.plot(days, Vt_conservative_5, label= 'g_c = ' + str(g_conservative))

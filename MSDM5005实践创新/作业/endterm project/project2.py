@@ -1328,6 +1328,12 @@ plt.ylabel('y')
 plt.legend()
 plt.show()
 
+
+# LAT
+index_LAT=[16,9]
+total_LAT=sum(y_fit[index_LAT])
+avg_LAT=total_LAT/len(index_LAT)
+
 # SAR
 index_SAR=[-1,-1,17,17]
 total_SAR=sum(y_fit[index_SAR])
@@ -1348,14 +1354,24 @@ index_MAG=[14,14,-1,15,10,13,16]
 total_MAG=sum(y_fit[index_MAG])
 avg_MAG=total_MAG/len(index_MAG)
 
+# MSC
+index_MSC=[13,17]
+total_MSC=sum(y_fit[index_MSC])
+avg_MSC=total_MSC/len(index_MSC)
+
+
 # 画图
 # 平均值数据
-averages = [avg_SAR, avg_ALB, avg_HUL, avg_MAG]
-drivers = ['SAR', 'ALB', 'HUL', 'MAG']
+averages = [avg_LAT, avg_SAR, avg_ALB, avg_HUL, avg_MAG, avg_MSC]
+drivers = ['LAT', 'SAR', 'ALB', 'HUL', 'MAG', 'MSC']
 # 颜色映射
-cmap = plt.get_cmap('Blues')  # 获取蓝色系的颜色映射
+cmap1 = plt.get_cmap('Oranges')  # 获取橙色系的颜色映射
+cmap2 = plt.get_cmap('Blues')  # 获取蓝色系的颜色映射
 normalized_averages = [(value +2) / (max(averages) +2) for value in averages]
-colors = [cmap(value) if value >= 0 else cmap(0) for value in normalized_averages]
+colors1 = [cmap1(value) if value >= 0 else cmap1(0) for value in normalized_averages[:3]]
+colors2 = [cmap2(value) if value >= 0 else cmap1(0) for value in normalized_averages[3:]]
+colors = colors1+colors2
+
 # 绘制柱状图
 plt.figure(figsize=(10,10), dpi=300)
 plt.bar(drivers, averages, color=colors)
@@ -1364,9 +1380,30 @@ for i, value in enumerate(averages):
 plt.xlabel('Drivers')
 plt.ylabel('Average Point')
 plt.title('Average Point Comparison')
+# 添加文本标注
+plt.text(-0.35, 8.8, 'Williams', color='#f98a3e', ha='left', va='bottom', fontsize=12, fontweight='bold')
+plt.text(-0.35, 8.3, 'Haas', color='#3a8ac2', ha='left', va='bottom', fontsize=12, fontweight='bold')
+plt.show()
+
+# 绘制柱状图
+plt.figure(figsize=(10,10), dpi=300)
+plt.bar(drivers, averages, color=['#f98a3e','#f98a3e','#f98a3e',"#3a8ac2","#3a8ac2","#3a8ac2"])
+for i, value in enumerate(averages):
+    plt.text(i, value + 0.08, str(round(value,3)), ha='center')
+plt.xlabel('Drivers')
+plt.ylabel('Average Point')
+plt.title('Average Point Comparison')
+# 添加文本标注
+plt.text(-0.35, 8.8, 'Williams', color='#f98a3e', ha='left', va='bottom', fontsize=12, fontweight='bold')
+plt.text(-0.35, 8.3, 'Haas', color='#3a8ac2', ha='left', va='bottom', fontsize=12, fontweight='bold')
 plt.show()
 
 ############# ALL 2022-2024
+# LAT
+index_LAT=[16,-1,16,16,14,16,15,15,16,12,-1,-1,18,18,18,15,-1,9,17,18,16,-1,19]
+total_LAT=sum(y_fit[index_LAT])
+avg_LAT=total_LAT/len(index_LAT)
+
 # SAR
 index_SAR=[12,16,16,16,20,18,20,-1,13,11,18,17,-1,13,14,-1,-1,10,16,11,16,16,20,14,17,17]
 total_SAR=sum(y_fit[index_SAR])
@@ -1387,14 +1424,23 @@ index_MAG=[5,9,14,9,16,17,1,-1,17,10,8,-1,16,16,15,16,12,14,9,17,-1,17,13,10,17,
 total_MAG=sum(y_fit[index_MAG])
 avg_MAG=total_MAG/len(index_MAG)
 
+# MSC
+index_MSC=[11,13,17,15,14,-1,14,-1,8,6,15,14,17,13,12,13,17,15,16,13,16]
+total_MSC=sum(y_fit[index_MSC])
+avg_MSC=total_MSC/len(index_MSC)
+
 # 画图
 # 平均值数据
-averages = [avg_SAR, avg_ALB, avg_HUL, avg_MAG]
-drivers = ['SAR', 'ALB', 'HUL', 'MAG']
+averages = [avg_LAT, avg_SAR, avg_ALB, avg_HUL, avg_MAG, avg_MSC]
+drivers = ['LAT', 'SAR', 'ALB', 'HUL', 'MAG', 'MSC']
 # 颜色映射
-cmap = plt.get_cmap('Blues')  # 获取蓝色系的颜色映射
+cmap1 = plt.get_cmap('Oranges')  # 获取橙色系的颜色映射
+cmap2 = plt.get_cmap('Blues')  # 获取蓝色系的颜色映射
 normalized_averages = [(value +2) / (max(averages) +2) for value in averages]
-colors = [cmap(value) if value >= 0 else cmap(0) for value in normalized_averages]
+colors1 = [cmap1(value) if value >= 0 else cmap1(0) for value in normalized_averages[:3]]
+colors2 = [cmap2(value) if value >= 0 else cmap1(0) for value in normalized_averages[3:]]
+colors = colors1+colors2
+
 # 绘制柱状图
 plt.figure(figsize=(10,10), dpi=300)
 plt.bar(drivers, averages, color=colors)
@@ -1403,23 +1449,199 @@ for i, value in enumerate(averages):
 plt.xlabel('Drivers')
 plt.ylabel('Average Point')
 plt.title('Average Point Comparison From All 2022-2024 races')
+# 添加文本标注
+plt.text(-0.35, 6.6, 'Williams', color='#f98a3e', ha='left', va='bottom', fontsize=12, fontweight='bold')
+plt.text(-0.35, 6.2, 'Haas', color='#3a8ac2', ha='left', va='bottom', fontsize=12, fontweight='bold')
 plt.show()
 
+# 绘制柱状图
+plt.figure(figsize=(10,10), dpi=300)
+plt.bar(drivers, averages, color=['#f98a3e','#f98a3e','#f98a3e',"#3a8ac2","#3a8ac2","#3a8ac2"])
+for i, value in enumerate(averages):
+    plt.text(i, value + 0.08, str(round(value,3)), ha='center')
+plt.xlabel('Drivers')
+plt.ylabel('Average Point')
+plt.title('Average Point Comparison From All 2022-2024 races')
+# 添加文本标注
+plt.text(-0.35, 6.6, 'Williams', color='#f98a3e', ha='left', va='bottom', fontsize=12, fontweight='bold')
+plt.text(-0.35, 6.2, 'Haas', color='#3a8ac2', ha='left', va='bottom', fontsize=12, fontweight='bold')
+plt.show()
 
 ############# ALL 2022-2024
 
-data = [y_fit[index_SAR],y_fit[index_ALB],y_fit[index_HUL],y_fit[index_MAG]]
+data = [y_fit[index_LAT],y_fit[index_SAR],y_fit[index_ALB],y_fit[index_HUL],y_fit[index_MAG],y_fit[index_MSC]]
 
-plt.figure(figsize=(10,10), dpi=300)
-plt.boxplot(data)
-plt.xticks([1,2,3,4], ['SAR','ALB','HUL','MAG'])
+plt.figure(figsize=(12,12), dpi=300)
+boxplot = plt.boxplot(data,patch_artist=True)
+c_list = ['#f97d31', '#f97d31','#f97d31','#118AD5','#118AD5', '#118AD5']
+for box, c in zip(boxplot['boxes'], c_list):  # 对箱线图设置颜色
+    box.set(color=c, linewidth=2,alpha=0.9)
+    box.set(facecolor=c)
+for median in boxplot['medians']:
+    # 设置中位数线的颜色
+    median.set(color='black', linewidth=1)
+plt.xticks([1,2,3,4,5,6], ['LAT','SAR','ALB','HUL','MAG','MSC'])
 plt.xlabel('Drivers')
 plt.ylabel('Average Point')
-plt.title('Boxplot of All points')
+plt.title("Boxplot of All 2022-2024 races' points")
+
+mean_values = [np.median(d) for d in data]
+for i, mean in enumerate(mean_values):
+    plt.text(i + 1, mean, f'{mean:.2f}', ha='center', va='bottom')
+
+# 添加文本标注
+plt.text(0.8, 21, 'Williams', color='#f97d31', ha='left', va='bottom', fontsize=12, fontweight='bold')
+plt.text(0.8, 20, 'Haas', color='#118AD5', ha='left', va='bottom', fontsize=12, fontweight='bold')
+
 plt.show()
 
 
+################################################################################################# 2022 Japan
+race_J_2022 = fastf1.get_session(2022, 'Japan', 'R')
+race_J_2022.load()
 
+race_J_2022.laps.drop_duplicates(subset='Driver')
+
+MSC_driver_laps_J_2022 = race_J_2022.laps.pick_driver("MSC").reset_index() # 28圈
+LAT_driver_laps_J_2022 = race_J_2022.laps.pick_driver("LAT").reset_index() # 28圈
+
+MSC_driver_laps_J_2022[MSC_driver_laps_J_2022['PitInTime'].notna()].loc[:,['LapNumber','PitOutTime', 'PitInTime']]
+MSC_driver_laps_J_2022.loc[:,['Compound','LapNumber','Time','LapTime']]
+for i in reversed(range(1,len(MSC_driver_laps_J_2022))):
+    MSC_driver_laps_J_2022.loc[i,'LapTime'] = MSC_driver_laps_J_2022.loc[i,'Time']-MSC_driver_laps_J_2022.loc[i-1,'Time']
+
+
+## 去除特异点 MSC 17
+MSC_J_2022_r = int(MSC_driver_laps_J_2022.Position.iloc[-1])-1
+
+fig, ax = plt.subplots(figsize=(6,6), dpi=300)
+
+sns.scatterplot(data=MSC_driver_laps_J_2022.drop(2),
+                x="LapNumber",
+                y="LapTime",
+                ax=ax,
+                hue="Compound",
+                palette={'SOFT': '#da291c', 'MEDIUM': '#ffd12e', 'HARD': '#1471e3', 'INTERMEDIATE': '#43b02a', 'WET': '#0067ad', 'UNKNOWN': '#00ffff', 'TEST-UNKNOWN': '#434649'},
+                s=60,
+                linewidth=0,
+                legend='auto')
+                
+sns.lineplot(data=MSC_driver_laps_J_2022.drop(2).iloc[:2,:],
+             x="LapNumber",
+             y="LapTime",
+             hue="Compound",
+             palette={'SOFT': '#da291c', 'MEDIUM': '#ffd12e', 'HARD': '#1471e3', 'INTERMEDIATE': '#43b02a', 'WET': '#0067ad', 'UNKNOWN': '#00ffff', 'TEST-UNKNOWN': '#434649'},
+             linewidth=2,
+             legend=False)
+sns.lineplot(data=MSC_driver_laps_J_2022.drop(2).loc[3:10,:],
+             x="LapNumber",
+             y="LapTime",
+             hue="Compound",
+             palette={'SOFT': '#da291c', 'MEDIUM': '#ffd12e', 'HARD': '#1471e3', 'INTERMEDIATE': '#43b02a', 'WET': '#0067ad', 'UNKNOWN': '#00ffff', 'TEST-UNKNOWN': '#434649'},
+             linewidth=2,
+             legend=False)
+sns.lineplot(data=MSC_driver_laps_J_2022.drop(2).loc[10:,:],
+             x="LapNumber",
+             y="LapTime",
+             hue="Compound",
+             palette={'SOFT': '#da291c', 'MEDIUM': '#ffd12e', 'HARD': '#1471e3', 'INTERMEDIATE': '#43b02a', 'WET': '#0067ad', 'UNKNOWN': '#00ffff', 'TEST-UNKNOWN': '#434649'},
+             linewidth=2,
+             legend=False)
+
+x1 = int(MSC_driver_laps_J_2022[MSC_driver_laps_J_2022['PitInTime'].notna()].loc[:,['LapNumber','Compound']].iloc[0,0])
+y1 = float(MSC_driver_laps_J_2022.loc[MSC_driver_laps_J_2022["LapNumber"] == x1, "LapTime"].values[0])
+ax.annotate(f'Pit 1 : Lap {x1}', xy=(x1, y1), xytext=(x1, y1 - 0.05*1e11), ha='center', color= palette[MSC_driver_laps_J_2022[MSC_driver_laps_J_2022['PitInTime'].notna()].loc[:,['LapNumber','Compound']].iloc[0,1]],
+fontproperties=FontProperties(weight='bold', size=12), bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+
+x2 = int(MSC_driver_laps_J_2022[MSC_driver_laps_J_2022['PitInTime'].notna()].loc[:,['LapNumber','Compound']].iloc[1,0])
+y2 = float(MSC_driver_laps_J_2022.loc[MSC_driver_laps_J_2022["LapNumber"] == x2, "LapTime"].values[0])
+ax.annotate(f'Pit 2 : Lap {x2}', xy=(x2, y2), xytext=(x2, y2 + 0.05*1e11), ha='center', color= palette[MSC_driver_laps_J_2022[MSC_driver_laps_J_2022['PitInTime'].notna()].loc[:,['LapNumber','Compound']].iloc[1,1]],
+fontproperties=FontProperties(weight='bold', size=12), bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+
+ax.set_xlabel("Lap Number")
+ax.set_ylabel("Lap Time /s")
+
+# ax.invert_yaxis()
+plt.suptitle("Laptimes in the 2022 Japan Race (MSC) - No."+str(MSC_J_2022_r))
+
+# Turn on major grid lines
+plt.grid(color='black', which='major', axis='both', linestyle='dashed',alpha=0.7)
+sns.despine(left=True, bottom=True)
+
+ax.yaxis.set_major_formatter(FuncFormatter(format_y_axis))
+
+plt.tight_layout()
+plt.show()
+##
+
+LAT_driver_laps_J_2022[LAT_driver_laps_J_2022['PitInTime'].notna()].loc[:,['LapNumber','PitOutTime', 'PitInTime']]
+LAT_driver_laps_J_2022.loc[:,['Compound','LapNumber','Time','LapTime']]
+for i in reversed(range(1,len(LAT_driver_laps_J_2022))):
+    LAT_driver_laps_J_2022.loc[i,'LapTime'] = LAT_driver_laps_J_2022.loc[i,'Time']-LAT_driver_laps_J_2022.loc[i-1,'Time']
+
+
+## 去除特异点 LAT 9
+LAT_J_2022_r = int(LAT_driver_laps_J_2022.Position.iloc[-1])
+
+fig, ax = plt.subplots(figsize=(6,6), dpi=300)
+
+sns.scatterplot(data=LAT_driver_laps_J_2022.drop(2),
+                x="LapNumber",
+                y="LapTime",
+                ax=ax,
+                hue="Compound",
+                palette={'SOFT': '#da291c', 'MEDIUM': '#ffd12e', 'HARD': '#1471e3', 'INTERMEDIATE': '#43b02a', 'WET': '#0067ad', 'UNKNOWN': '#00ffff', 'TEST-UNKNOWN': '#434649'},
+                s=60,
+                linewidth=0,
+                legend='auto')
+                
+sns.lineplot(data=LAT_driver_laps_J_2022.drop(2).iloc[:2,:],
+             x="LapNumber",
+             y="LapTime",
+             hue="Compound",
+             palette={'SOFT': '#da291c', 'MEDIUM': '#ffd12e', 'HARD': '#1471e3', 'INTERMEDIATE': '#43b02a', 'WET': '#0067ad', 'UNKNOWN': '#00ffff', 'TEST-UNKNOWN': '#434649'},
+             linewidth=2,
+             legend=False)
+sns.lineplot(data=LAT_driver_laps_J_2022.drop(2).loc[3:5,:],
+             x="LapNumber",
+             y="LapTime",
+             hue="Compound",
+             palette={'SOFT': '#da291c', 'MEDIUM': '#ffd12e', 'HARD': '#1471e3', 'INTERMEDIATE': '#43b02a', 'WET': '#0067ad', 'UNKNOWN': '#00ffff', 'TEST-UNKNOWN': '#434649'},
+             linewidth=2,
+             legend=False)
+sns.lineplot(data=LAT_driver_laps_J_2022.drop(2).loc[5:,:],
+             x="LapNumber",
+             y="LapTime",
+             hue="Compound",
+             palette={'SOFT': '#da291c', 'MEDIUM': '#ffd12e', 'HARD': '#1471e3', 'INTERMEDIATE': '#43b02a', 'WET': '#0067ad', 'UNKNOWN': '#00ffff', 'TEST-UNKNOWN': '#434649'},
+             linewidth=2,
+             legend=False)
+
+x1 = int(LAT_driver_laps_J_2022[LAT_driver_laps_J_2022['PitInTime'].notna()].loc[:,['LapNumber','Compound']].iloc[0,0])
+y1 = float(LAT_driver_laps_J_2022.loc[LAT_driver_laps_J_2022["LapNumber"] == x1, "LapTime"].values[0])
+ax.annotate(f'Pit 1 : Lap {x1}', xy=(x1, y1), xytext=(x1, y1 - 0.05*1e11), ha='center', color= palette[LAT_driver_laps_J_2022[LAT_driver_laps_J_2022['PitInTime'].notna()].loc[:,['LapNumber','Compound']].iloc[0,1]],
+fontproperties=FontProperties(weight='bold', size=12), bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+
+x2 = int(LAT_driver_laps_J_2022[LAT_driver_laps_J_2022['PitInTime'].notna()].loc[:,['LapNumber','Compound']].iloc[1,0])
+y2 = float(LAT_driver_laps_J_2022.loc[LAT_driver_laps_J_2022["LapNumber"] == x2, "LapTime"].values[0])
+ax.annotate(f'Pit 2 : Lap {x2}', xy=(x2, y2), xytext=(x2+5, y2), ha='center', color= palette[LAT_driver_laps_J_2022[LAT_driver_laps_J_2022['PitInTime'].notna()].loc[:,['LapNumber','Compound']].iloc[1,1]],
+fontproperties=FontProperties(weight='bold', size=12), bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+
+ax.set_xlabel("Lap Number")
+ax.set_ylabel("Lap Time /s")
+
+# ax.invert_yaxis()
+plt.suptitle("Laptimes in the 2022 Japan Race (LAT) - No."+str(LAT_J_2022_r))
+
+# Turn on major grid lines
+plt.grid(color='black', which='major', axis='both', linestyle='dashed',alpha=0.7)
+sns.despine(left=True, bottom=True)
+
+ax.yaxis.set_major_formatter(FuncFormatter(format_y_axis))
+
+plt.tight_layout()
+plt.show()
+##
 
 
 
