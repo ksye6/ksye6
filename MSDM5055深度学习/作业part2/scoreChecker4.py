@@ -74,7 +74,7 @@ def energy(batch, adjEle=adjEle):
 
 def testIfDuplicateWithDataset(batch, testPoints=20, tol=1e-2):
     randIdx = torch.randint(0, 256, [testPoints])
-    dfile = bz2.BZ2File('./xyData.bz2')
+    dfile = bz2.BZ2File('C:/Users/张铭韬/Desktop/学业/港科大/MSDM5055深度学习/作业part2/xyData.bz2')
     data = torch.from_numpy(np.load(dfile)).to(torch.float32)
     dfile.close()
     sampleData = torch.sin(data.reshape(-1, 256)[:, randIdx])
@@ -85,7 +85,7 @@ def testIfDuplicateWithDataset(batch, testPoints=20, tol=1e-2):
     return ratio
 
 
-net = torch.load("generative.pth")
+net = torch.load("C:/Users/张铭韬/Desktop/学业/港科大/MSDM5055深度学习/作业part2/hw6_para/dcgan_netG.pth")
 
 params = list(net.parameters())
 params = list(filter(lambda p: p.requires_grad, params))

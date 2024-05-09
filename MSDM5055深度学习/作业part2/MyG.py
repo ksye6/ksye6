@@ -39,6 +39,7 @@ test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
 samples= next(iter(train_loader))
 print(samples)
 
+
 # 预览图片
 import cv2
 import torchvision
@@ -400,7 +401,7 @@ if __name__ == '__main__':
         visualize(fake, str(iters))
 
 
-
+# sum(p.numel() for p in net.values())  netG.state_dict() 查看参数
 
 
 
