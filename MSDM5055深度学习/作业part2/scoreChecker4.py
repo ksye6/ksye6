@@ -3,6 +3,7 @@ import numpy as np
 from torch import nn
 from generative import NeuralNetwork
 import bz2
+from torch.utils.data import Dataset
 
 torch.manual_seed(42)
 
@@ -74,7 +75,7 @@ def energy(batch, adjEle=adjEle):
 
 def testIfDuplicateWithDataset(batch, testPoints=20, tol=1e-2):
     randIdx = torch.randint(0, 256, [testPoints])
-    dfile = bz2.BZ2File('C:/Users/�����/Desktop/ѧҵ/�ۿƴ�/MSDM5055���ѧϰ/��ҵpart2/xyData.bz2')
+    dfile = bz2.BZ2File('C://Users//张铭韬//Desktop//学业//港科大//MSDM5055深度学习//作业part2//xyData.bz2')
     data = torch.from_numpy(np.load(dfile)).to(torch.float32)
     dfile.close()
     sampleData = torch.sin(data.reshape(-1, 256)[:, randIdx])
@@ -85,12 +86,34 @@ def testIfDuplicateWithDataset(batch, testPoints=20, tol=1e-2):
     return ratio
 
 
-net = torch.load("C:/Users/�����/Desktop/ѧҵ/�ۿƴ�/MSDM5055���ѧϰ/��ҵpart2/hw6_para/dcgan_netG.pth")
+net = torch.load("C:/Users/张铭韬/Desktop/学业/港科大/MSDM5055深度学习/作业part2/hw6_para/dcgan_netG.pth")
 
 params = list(net.parameters())
 params = list(filter(lambda p: p.requires_grad, params))
 nparams = sum([np.prod(p.size()) for p in params])
 print('total number of trainable parameters:', nparams)
+
+
+dfile = bz2.BZ2File('C://Users//张铭韬//Desktop//学业//港科大//MSDM5055深度学习//作业part2//xyData.bz2')
+data = torch.from_numpy(np.load(dfile)).to(torch.float32)
+batch_size = 64
+class XYDataset(Dataset):
+    def __init__(self, xydata, transformation=None):
+        self.xydata = xydata
+        self.transformation = transformation
+
+    def __len__(self):
+        return self.xydata.shape[0]
+
+    def __getitem__(self, idx):
+        ret = self.xydata[idx, :, :, :]
+        if self.transformation:
+            ret = self.transformation(ret)
+
+        return ret
+
+trainset = XYDataset(data[:-10000, :, :, :])
+
 
 with torch.no_grad():
     batch = net.sample(batchSize)
