@@ -39,7 +39,6 @@ testset = XYDataset(data[10000:, :, :, :])
 test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                          shuffle=False)
 
-
 class NeuralNetwork(nn.Module):
     def __init__(self, num_z, ngf, num_channels):
         super(NeuralNetwork, self).__init__()
@@ -63,8 +62,8 @@ class NeuralNetwork(nn.Module):
         return self.main(input)
 
     def sample(self, batchSize):
-        samples= next(iter(torch.utils.data.DataLoader(trainset, batch_size=batch_size,shuffle=True)))
-        return samples
+        return self.main((torch.randn(batchSize, self.num_z, 1, 1)).to(device))
+
 
 class Discriminator(nn.Module):
     def __init__(self, ndf, num_channels):

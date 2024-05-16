@@ -1,9 +1,14 @@
 import torch
 import numpy as np
 from torch import nn
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import torch.optim as optim
+import time
+from datetime import timedelta
 from generative import NeuralNetwork
 import bz2
-from torch.utils.data import Dataset
 
 torch.manual_seed(42)
 
@@ -62,58 +67,39 @@ class Hypercube(Lattice):
 
 def energy(batch, adjEle=adjEle):
     lattice = Hypercube(16, 2)
-    adjMask = torch.from_numpy(lattice.Adj).bool()
-    adjEle = torch.from_numpy(adjEle).long()
+    adjMask = torch.from_numpy(lattice.Adj).bool().to(device)
+    adjEle = torch.from_numpy(adjEle).long().to(device)
 
-    adj = torch.zeros(adjMask.shape, dtype=torch.long)
+    adj = torch.zeros(adjMask.shape, dtype=torch.long).to(device)
     adj = adj.masked_scatter(adjMask, adjEle)
 
-    samples = torch.cat([torch.cos(batch), torch.sin(batch)], dim=1)
+    samples = torch.cat([torch.cos(batch), torch.sin(batch)], dim=1).to(device)
     energy = -((samples.flatten(-2) @ adj.to(torch.float32)) * samples.flatten(-2)).sum([-2, -1]).unsqueeze(-1)/2
     return energy
 
 
 def testIfDuplicateWithDataset(batch, testPoints=20, tol=1e-2):
-    randIdx = torch.randint(0, 256, [testPoints])
-    dfile = bz2.BZ2File('C://Users//张铭韬//Desktop//学业//港科大//MSDM5055深度学习//作业part2//xyData.bz2')
-    data = torch.from_numpy(np.load(dfile)).to(torch.float32)
+    randIdx = torch.randint(0, 256, [testPoints]).to(device)
+    dfile = bz2.BZ2File('C://Users//�����//Desktop//ѧҵ//�ۿƴ�//MSDM5055���ѧϰ//��ҵpart2//xyData.bz2')
+    data = torch.from_numpy(np.load(dfile)).to(torch.float32).to(device)
     dfile.close()
-    sampleData = torch.sin(data.reshape(-1, 256)[:, randIdx])
-    sampleBatch = torch.cos(batch.reshape(-1, 256)[:, randIdx])
-    difference = torch.abs(sampleBatch.unsqueeze(1) - sampleData).reshape(batch.shape[0], -1).mean(-1)
-    num = torch.sum(difference <= tol)
+    sampleData = torch.sin(data.reshape(-1, 256)[:, randIdx]).to(device)
+    sampleBatch = torch.cos(batch.reshape(-1, 256)[:, randIdx]).to(device)
+    difference = torch.abs(sampleBatch.unsqueeze(1) - sampleData).reshape(batch.shape[0], -1).mean(-1).to(device)
+    num = torch.sum(difference <= tol).to(device)
     ratio = num.item() / batch.shape[0]
     return ratio
 
 
-net = torch.load("C:/Users/张铭韬/Desktop/学业/港科大/MSDM5055深度学习/作业part2/hw6_para/dcgan_netG.pth")
+net = torch.load("C:/Users/�����/Desktop/ѧҵ/�ۿƴ�/MSDM5055���ѧϰ/��ҵpart2/hw6_para/dcgan_netG.pth")
 
 params = list(net.parameters())
 params = list(filter(lambda p: p.requires_grad, params))
 nparams = sum([np.prod(p.size()) for p in params])
 print('total number of trainable parameters:', nparams)
 
-
-dfile = bz2.BZ2File('C://Users//张铭韬//Desktop//学业//港科大//MSDM5055深度学习//作业part2//xyData.bz2')
-data = torch.from_numpy(np.load(dfile)).to(torch.float32)
-batch_size = 64
-class XYDataset(Dataset):
-    def __init__(self, xydata, transformation=None):
-        self.xydata = xydata
-        self.transformation = transformation
-
-    def __len__(self):
-        return self.xydata.shape[0]
-
-    def __getitem__(self, idx):
-        ret = self.xydata[idx, :, :, :]
-        if self.transformation:
-            ret = self.transformation(ret)
-
-        return ret
-
-trainset = XYDataset(data[:-10000, :, :, :])
-
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+net.to(device)
 
 with torch.no_grad():
     batch = net.sample(batchSize)

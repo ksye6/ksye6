@@ -173,32 +173,28 @@ G_integral()
 
 # (g)
 def f(x):
-    numerator = np.exp(-(x[0]**4 + x[1]**4 + x[2]**4 + x[3]**4))
-    denominator = 1 + x[0]**2 + x[1]**2 + x[2]**2 + x[3]**2
-    # Avoid overflow and division by zero
-    if denominator == 0:
-        return 0
-    else:
-        return numerator / denominator
+  return 1/(1 + x[0]**2 + x[1]**2 + x[2]**2 + x[3]**2)
+
+def w(x):
+    return np.exp(-(x[0]**4 + x[1]**4 + x[2]**4 + x[3]**4))
 
 def metropolis_algorithm(n, step_size):
-    x = np.zeros(4)  # Initial point
+    x = np.zeros(4)
     integral_sum = 0.0
     integral_squared_sum = 0.0
     count = 0
 
     for _ in range(n):
         y = x + step_size * np.random.randn(4)
-        pa = min(1, f(y) / f(x))
+        pa = min(1, w(y)/w(x))
 
         if np.random.rand() < pa:
             x = y
             count += 1
         
-        weight = np.exp(-(x[0]**4 + x[1]**4 + x[2]**4 + x[3]**4))
-        value = f(x)
-        integral_sum += value / weight
-        integral_squared_sum += (value / weight)**2
+        v = f(x)
+        integral_sum += v
+        integral_squared_sum += v**2
 
     integral_mean = integral_sum / n
     integral_variance = (integral_squared_sum / n - integral_mean**2) / n
@@ -210,8 +206,7 @@ def metropolis_algorithm(n, step_size):
 
 n = int(1e6)
 step_size = 0.1
-integral_mean, integral_error, a_rate = metropolis_algorithm(n, step_size)
-integral_value = integral_mean
+integral_value, integral_error, a_rate = metropolis_algorithm(n, step_size)
 
 print("Approximate integral:", integral_value)
 print("Error estimate:", integral_error)
