@@ -28,7 +28,7 @@ def simulate(net, trialTime=20, maxStep=4000):
             s2, r, term, trun, info = env.step(action)
             totalReward += r
             s = s2
-            print("episode", episode, ", timeStep", step, ", action", action, ", reward", r)
+            # print("episode", episode, ", timeStep", step, ", action", action, ", reward", r)
 
             if term:
                 print("ending episode.")
@@ -41,7 +41,7 @@ def simulate(net, trialTime=20, maxStep=4000):
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 net = NeuralNetwork().to(device)
-net.load(torch.load("C:/Users/张铭韬/Desktop/reinforcement.pth"))
+net.load(torch.load("C:/Users/张铭韬/Desktop/学业/港科大/MSDM5055深度学习/作业part2/hw6_para/reinforcement.pth"))
 # params = sum(p.numel() for p in dict.values())
 
 params = list(net.parameters())

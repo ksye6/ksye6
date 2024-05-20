@@ -91,7 +91,7 @@ def testIfDuplicateWithDataset(batch, testPoints=20, tol=1e-2):
     return ratio
 
 
-net = torch.load("C:/Users/张铭韬/Desktop/学业/港科大/MSDM5055深度学习/作业part2/hw6_para/dcgan_netG.pth")
+net = torch.load("C:/Users/张铭韬/Desktop/学业/港科大/MSDM5055深度学习/作业part2/hw6_para/generative.pth")
 
 params = list(net.parameters())
 params = list(filter(lambda p: p.requires_grad, params))
